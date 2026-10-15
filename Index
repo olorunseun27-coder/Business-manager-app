@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARBITE - Cloud Shop &amp; Sales Manager</title>
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #0d47a1;
+            --bg: #f4f6f8;
+            --card: #fff;
+            --text: #172033;
+            --muted: #667085;
+            --border: #e4e7ec;
+            --green: #12b76a;
+            --red: #f04438;
+            --orange: #f79009;
+            --purple: #7c3aed;
+            --shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+        
+        body.is-staff .admin-only { display: none !important; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; user-select: none; color: var(--text); }
+        * { box-sizing: border-box; }
+        
+        #app-error-banner { display: none; background: #dc3545; color: white; padding: 12px 16px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 99999; font-size: 13px; line-height: 1.5; }
+        
+        /* Auth Screen */
+        #view-auth { display: flex; min-height: 100vh; background: linear-gradient(135deg, #0d47a1 0%, #1e1b4b 100%); align-items: center; justify-content: center; padding: 20px; }
+        .auth-container { background: #ffffff; width: 100%; max-width: 440px; border-radius: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); padding: 30px 25px; text-align: center; }
+        .auth-brand-icon { font-size: 44px; margin-bottom: 5px; display: inline-block; }
+        .auth-title { font-size: 22px; font-weight: 800; color: #0d47a1; margin: 0 0 6px 0; }
+        .auth-subtitle { font-size: 13px; color: #64748b; margin-bottom: 22px; }
+        .auth-tabs { display: flex; background: #e2e8f0; border-radius: 10px; padding: 4px; margin-bottom: 20px; gap: 4px; }
+        .auth-tab-btn { flex: 1; padding: 9px; font-size: 13px; font-weight: 700; border: none; background: transparent; border-radius: 8px; cursor: pointer; color: #475569; transition: 0.2s; margin-bottom: 0; }
+        .auth-tab-btn.active { background: #ffffff; color: #0d47a1; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        .auth-plan-preview { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 12px; margin-top: 15px; font-size: 11.5px; color: #334155; text-align: left; }
+        
+        /* App View */
+        #view-app { display: none; padding-bottom: 80px; }
+        .header { background: linear-gradient(135deg, #0d47a1, #1565c0); color: white; padding: 12px 16px; font-size: 17px; font-weight: bold; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 10px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .header-brand { display: flex; align-items: center; gap: 8px; }
+        .header-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .top-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-live { background: #12b76a; color: white; }
+        .badge-syncing { background: #f79009; color: white; }
+        .badge-plan-trial { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; font-weight: 700; }
+        .badge-plan-prem { background: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 800; }
+        .badge-role { background: #37474f; color: #fde047; }
+        .badge-logout { background: rgba(255,255,255,0.2); color: white; }
+        
+        .container { padding: 15px; max-width: 100%; margin: 0 auto; }
+        .card { background: white; padding: 16px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; border: 1px solid var(--border); }
+        
+        .plan-alert-banner { background: linear-gradient(90deg, #ede9fe, #f5f3ff); border: 1px solid #c4b5fd; border-radius: 10px; padding: 10px 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; color: #4c1d95; }
+        
+        .bank-info-box { background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 12px; padding: 16px; margin: 15px 0; text-align: left; }
+        .bank-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
+        .bank-info-row b { color: #0d47a1; }
+
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .dash-card { background: #fff; padding: 14px; border-radius: 10px; text-align: center; border: 1px solid #eee; cursor: pointer; transition: 0.2s; }
+        .dash-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
+        .dash-num { font-size: 20px; font-weight: bold; display: block; margin-bottom: 4px; }
+        .dash-label { font-size: 11px; color: #777; text-transform: uppercase; font-weight: 600; }
+        
+        .text-green { color: #28a745; } .text-red { color: #dc3545; } .text-blue { color: #007bff; } .text-orange { color: #e65100; } .text-purple { color: #7c3aed; }
+        
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
+        thead { background: #343a40; color: white; }
+        th { padding: 11px 9px; text-align: left; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        td { padding: 10px 9px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+        tr:nth-child(even) { background-color: #fafbfc; }
+        
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 10px; box-sizing: border-box; background: #fafafa; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { border-color: #0d47a1; outline: none; background: white; }
+        button { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; color: white; margin-bottom: 5px; transition: 0.2s; font-family: inherit; }
+        .btn-green { background: #2e7d32; } .btn-blue { background: #1565c0; } .btn-red { background: #c62828; } .btn-orange { background: #ef6c00; } .btn-dark { background: #37474f; } .btn-whatsapp { background: #25d366; color: white; }
+        .btn-purple { background: #7c3aed; }
+        .btn-tbl { padding: 5px 9px; font-size: 11px; border-radius: 4px; margin: 2px; width: auto; display: inline-block; }
+        .btn-mini { padding: 3px 8px; width: auto; display: inline-block; margin: 0 2px; border-radius: 4px; font-size: 12px; }
+        
+        .badge { font-size: 10px; padding: 4px 8px; border-radius: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; text-align: center; }
+        .bg-full { background: #d4edda; color: #155724; } .bg-over { background: #f8d7da; color: #721c24; }
+        .stock-badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .stock-badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+        .category-stock-box { border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 16px; background: #fff; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .category-stock-header { background: #f8fafc; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .category-stock-title { font-size: 15px; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; gap: 6px; }
+        
+        .cat-chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; background: #e2e8f0; color: #334155; border: none; width: auto; margin: 0; white-space: nowrap; flex: none; }
+        .cat-chip.active { background: #0d47a1; color: white; }
+
+        .nav { display: flex; justify-content: space-around; background: #fff; padding: 8px 0; position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ccc; z-index: 9999; box-shadow: 0 -2px 6px rgba(0,0,0,0.08); }
+        .nav-btn { background: none; border: none; color: #777; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; padding: 2px 0; margin: 0; width: auto; }
+        .nav-btn.active { color: #0d47a1; }
+        .section { display: none; } .active-section { display: block; }
+
+        /* Seamless Embedded Market Frame */
+        #marketFrame { width: 100%; height: calc(100vh - 120px); border: none; display: block; }
+
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:99999; align-items:center; justify-content:center; }
+        .modal-content { background:white; padding:20px; border-radius: 14px; width:92%; max-width: 500px; animation: popUp 0.25s; max-height: 90vh; overflow-y: auto; }
+        @keyframes popUp { from {transform: scale(0.92); opacity:0;} to {transform: scale(1); opacity:1;} }
+    </style>
+</head>
+
+<body>
+
+    <div id="app-error-banner"></div>
+    
+    <!-- ================= 1. FRONT PAGE: AUTH ONLY ================= -->
+    <div id="view-auth">
+        <div class="auth-container">
+            <span class="auth-brand-icon">🛒</span>
+            <h1 class="auth-title">STARBITE Manager</h1>
+            <p class="auth-subtitle">Cloud Inventory &amp; Multi-Shop Commerce Portal</p>
+
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn active" id="tabAuthLogin" onclick="switchAuthMode('login')">Log In</button>
+                <button type="button" class="auth-tab-btn" id="tabAuthRegister" onclick="switchAuthMode('register')">Create Shop</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="formAuthLogin">
+                <input type="text" id="loginBizCode" placeholder="Enter Business Code (e.g. STARBITE)" style="text-transform:uppercase; font-weight:bold; text-align:center;">
+                <input type="password" id="loginBizPin" placeholder="Security PIN" maxlength="8" style="text-align:center;">
+                <button class="btn-blue" onclick="window.loginBusiness()">🔓 Log In to Shop</button>
+                
+                <div style="margin-top:12px; text-align:center;">
+                    <a href="javascript:void(0)" onclick="window.openEmailForgotPinModal()" style="font-size:12px; color:#ea580c; font-weight:bold; text-decoration:none;">
+                        🔑 Forgot PIN? Reset via Email
+                    </a>
+                </div>
+
+                <p style="font-size:12px; color:#64748b; margin-top:14px;">
+                    Don't have a business code? <a href="javascript:void(0)" onclick="switchAuthMode('register')" style="color:#0d47a1; font-weight:bold;">Sign Up Here</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="formAuthRegister" style="display:none;">
+                <input type="text" id="regBizName" placeholder="Business / Shop Name (e.g. Lagos Superstore)">
+                <input type="text" id="regBizCode" placeholder="Choose Store Code (e.g. LAGOS-01)" style="text-transform:uppercase; font-weight:bold; text-align:center;">
+                <input type="tel" id="regBizPhone" placeholder="Owner Phone Number (e.g. 08012345678)">
+                <input type="email" id="regBizEmail" placeholder="Owner Email Address (for PIN recovery)">
+                <input type="password" id="regBizPin" placeholder="Create 4-Digit Security PIN" maxlength="8" style="text-align:center;">
+                
+                <div class="auth-plan-preview">
+                    <b>🎁 Includes 14-Day Free Trial:</b><br>
+                    Instant access to sales, stock management, and cloud backup. Upgrade to Premium anytime for full Market Buyer &amp; WhatsApp features!
+                </div>
+                
+                <button class="btn-green" style="margin-top:12px;" onclick="window.registerBusiness()">✨ Register &amp; Start Trial</button>
+                <p style="font-size:12px; color:#64748b; margin-top:14px;">
+                    Already have a shop? <a href="javascript:void(0)" onclick="switchAuthMode('login')" style="color:#0d47a1; font-weight:bold;">Log In Here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 2. MAIN APP VIEW ================= -->
+    <div id="view-app">
+        <header class="header">
+            <div class="header-brand"><span style="font-size:20px;">🛒</span> STARBITE</div>
+            <div class="header-badges">
+                <span class="top-badge badge-live" id="cloudStatusBadge" onclick="runIf(window.forceCloudSync)">☁️ Live</span>
+                <span class="top-badge badge-plan-trial" id="planBadge" onclick="openSubscriptionModal()">⭐ Plan: Free Trial</span>
+                <span class="top-badge badge-role" id="roleBadge" onclick="window.toggleStaffRole()">👑 Admin</span>
+                <span class="top-badge badge-logout" onclick="window.logoutBusiness()">🚪 <span id="topShopName">Shop</span> (Exit)</span>
+            </div>
+        </header>
+
+        <div class="container" style="padding: 10px;">
+            <div id="trialBanner" class="plan-alert-banner">
+                <div>
+                    <b>✨ Free Trial Active</b>
+                    <div style="font-size:11.5px; opacity:0.9;" id="trialCountdownTxt">Enjoy sales and stock tracking during your test period.</div>
+                </div>
+                <button class="btn-purple btn-tbl" style="margin:0;" onclick="openSubscriptionModal()">⭐ Upgrade to Premium</button>
+            </div>
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="sec-dash" class="section active-section">
+                <div class="dash-grid">
+                    <div class="dash-card admin-only">
+                        <span class="dash-num text-green" id="d-today">₦0</span>
+                        <span class="dash-label">Today's Cash</span>
+                    </div>
+                    <div class="dash-card admin-only">
+                        <span class="dash-num text-red" id="d-owed">₦0</span>
+                        <span class="dash-label">Total Debt Owed</span>
+                    </div>
+                    <div class="dash-card" onclick="runIf(window.showLowStock)">
+                        <span class="dash-num text-blue" id="d-stock">0</span>
+                        <span class="dash-label">Low Stock (Tap)</span>
+                    </div>
+                    <div class="dash-card" onclick="runIf(window.showExpiring)">
+                        <span class="dash-num text-orange" id="d-exp">0</span>
+                        <span class="dash-label">Expiring Soon (Tap)</span>
+                    </div>
+                    <div class="dash-card" onclick="runIf(window.showGoodsBought)">
+                        <span class="dash-num text-blue" id="d-mkt-bought">0 pcs</span>
+                        <span class="dash-label">Total Goods Bought (Tap)</span>
+                    </div>
+                    <div class="dash-card" onclick="runIf(window.showGoodsSold)">
+                        <span class="dash-num text-green" id="d-mkt-sold">0 pcs</span>
+                        <span class="dash-label">Total Goods Sold (Tap)</span>
+                    </div>
+                    <div class="dash-card admin-only" onclick="nav('sec-trash', document.getElementById('btn-trash'))">
+                        <span class="dash-num" id="d-trash">0</span>
+                        <span class="dash-label">View Trash 🗑️</span>
+                    </div>
+                </div>
+
+                <div class="card admin-only" style="border: 1px solid #fecaca; background: #fff5f5; margin-top: 15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; color: #b91c1c;">⚠️ Complete App &amp; Cloud Reset</h4>
+                            <p style="font-size: 12px; color: #7f1d1d; margin: 0;">Erase all products, sales history, cash balances, and debtors for this shop.</p>
+                        </div>
+                        <button class="btn-red" style="width: auto; padding: 10px 16px; margin: 0; font-size: 13px;" onclick="runIf(window.clearEntireAppData)">💥 Clear All Data &amp; Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SELL -->
+            <div id="sec-sell" class="section">
+                <div class="card">
+                    <h4 style="margin-top:0; color:#555;">⚡ Quick Add (Freezer stock only)</h4>
+                    <div id="quickTapGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap:8px; margin-bottom:15px;"></div>
+                    
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="search" placeholder="🔍 Search product..." onkeyup="runIf(window.renderShopProducts)">
+                        <button style="width:50px; background:#1565c0; margin:0;" onclick="runIf(window.startVoiceSearch)">🎤</button>
+                        <button style="width:50px; background:#666; margin:0;" onclick="window.startScan('search')">📷</button>
+                    </div>
+                    <div id="prodList" style="max-height: 180px; overflow-y: auto;"></div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <input type="number" id="qty" placeholder="Qty" style="width: 80px;">
+                        <button class="btn-green" onclick="runIf(window.addToCart)">Add</button>
+                    </div>
+                    <input type="hidden" id="selIndex">
+                </div>
+
+                <div class="card">
+                    <h3>🛒 Cart (Total: ₦<span id="cartTotal">0</span>)</h3>
+                    <div id="cartList"></div>
+                    <div style="background:#37474f; color:white; padding:10px; border-radius:8px; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Cash Given:</span>
+                        <input type="number" id="payInput" placeholder="0" style="width:100px; padding:5px; margin:0; text-align:right;" onkeyup="runIf(window.calcChange)">
+                    </div>
+                    <div id="changeTxt" style="text-align:right; font-weight:bold; margin-top:5px; color:#2e7d32;">Change: ₦0</div>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="btn-blue" onclick="runIf(window.checkout, 'cash')">💵 Cash Sale</button>
+                        <button class="btn-orange" onclick="openCreditModal()">📒 Credit Sale</button>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn-dark" onclick="runIf(window.resetCart)">🧹 Reset Cart</button>
+                        <button class="btn-blue" id="btn-restore-cart" style="display:none; margin-bottom:5px;" onclick="runIf(window.restoreCart)">↩️ Restore Cart</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: SEAMLESS EMBEDDED MARKET TAB -->
+            <div id="sec-market" class="section">
+                <iframe id="marketFrame" src="market.html"></iframe>
+            </div>
+
+            <!-- TAB 4: DEBT -->
+            <div id="sec-debt" class="section">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3 style="margin:0;">📒 Debt Records</h3>
+                        <button class="btn-dark btn-tbl admin-only" style="font-size:14px; padding:8px;" onclick="openManualDebt()">+ Add Old Debt</button>
+                    </div>
+                    <input type="text" id="debtSearch" placeholder="🔍 Search name..." onkeyup="runIf(window.renderDebtors)">
+                    <div class="table-responsive">
+                        <table id="debtTable">
+                            <thead><tr><th>Name &amp; Items</th><th class="admin-only">Total</th><th class="admin-only">Paid</th><th class="admin-only">Balance</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="debtTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: STOCK -->
+            <div id="sec-stock" class="section">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <h3 style="margin:0;">📦 Shop Inventory &amp; Categorized Stock</h3>
+                        <button class="btn-dark btn-tbl" id="btn-sync-prods" onclick="window.manualRecoverProducts()" style="width:auto;">🔄 Sync &amp; Recover</button>
+                    </div>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Drinks, Eggs, and groceries track their own independent stock.</p>
+
+                    <input type="text" id="stockSearch" placeholder="🔍 Find any product by name..." onkeyup="window.renderStock()" style="margin-bottom:10px;">
+                    
+                    <div style="display:flex; gap:10px; margin-bottom:12px;">
+                        <button class="btn-blue admin-only" style="margin:0;" onclick="openProdModal()">+ New Product</button>
+                        <button class="btn-red admin-only" style="margin:0; font-size:13px;" onclick="runIf(window.resetAllStocksToZero)">⚠️ Reset Stocks to 0</button>
+                        <button class="btn-green admin-only" style="margin:0; font-size:13px;" onclick="runIf(window.restoreAllStocks)">↩️ Restore Stocks</button>
+                    </div>
+
+                    <div id="stockCategoryFilterChips" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px;"></div>
+                    <div id="stockList" style="margin-top:5px;"></div>
+                    
+                    <div class="admin-only" style="background:#e8f5e9; color:#2e7d32; padding:10px; margin-top:10px; font-weight:bold; text-align:center; border-radius:8px;">
+                        Total Expected Revenue: <span id="grandStockTotal">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: REPORTS & HIST -->
+            <div id="sec-hist" class="section admin-only">
+                <div class="card">
+                    <h3>📜 Reports &amp; Sales History</h3>
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'day')">📄 Daily PDF</button>
+                        <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'month')">📄 Monthly PDF</button>
+                        <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'year')">📄 Yearly PDF</button>
+                    </div>
+                    <div id="mainHistList" style="margin-top:10px;"></div>
+                </div>
+            </div>
+
+            <!-- TAB 7: TRASH -->
+            <div id="sec-trash" class="section admin-only">
+                <div class="card"><h3>🗑️ Deleted Debtors</h3><div id="trashList"></div></div>
+            </div>
+        </div>
+
+        <!-- Navigation Bar -->
+        <div class="nav">
+            <button class="nav-btn active" onclick="nav('sec-dash', this)"><span>📊</span>Dash</button>
+            <button class="nav-btn" onclick="nav('sec-sell', this)"><span>🛒</span>Sell</button>
+            <button class="nav-btn" id="btn-market" onclick="nav('sec-market', this)"><span>📋</span>Market</button>
+            <button class="nav-btn" onclick="nav('sec-debt', this)"><span>📒</span>Debt</button>
+            <button class="nav-btn" onclick="nav('sec-stock', this)"><span>📦</span>Stock</button>
+            <button class="nav-btn admin-only" onclick="nav('sec-hist', this)"><span>📜</span>Hist</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="subModal" class="modal">
+        <div class="modal-content" style="max-width: 520px; text-align:center;">
+            <span style="font-size:36px;">💎</span>
+            <h2 style="margin:4px 0 2px; color:#0d47a1;">Upgrade STARBITE Plan</h2>
+            <div class="bank-info-box">
+                <div class="bank-info-row"><span>Plan:</span><b>Premium All-Access</b></div>
+                <div class="bank-info-row"><span>Price:</span><b class="text-purple" id="displayPlanPrice">₦5,000 / month</b></div>
+            </div>
+            <button class="btn-purple" onclick="openBankPaymentModal()">💳 Pay via Direct Transfer</button>
+            <button class="btn-dark" style="margin-top:10px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div id="bankModal" class="modal">
+        <div class="modal-content" style="max-width: 480px; text-align:center;">
+            <span style="font-size:38px;">🏦</span>
+            <h2 style="margin:4px 0 2px; color:#0d47a1;">Bank Transfer Payment</h2>
+            <div class="bank-info-box">
+                <div class="bank-info-row"><span>Bank Name:</span><b id="ownerBankDisplay">Loading...</b></div>
+                <div class="bank-info-row"><span>Account Number:</span><b id="ownerAccountDisplay" style="font-size:16px; color:#0d47a1;">Loading...</b></div>
+                <div class="bank-info-row"><span>Account Name:</span><b id="ownerNameDisplay">Loading...</b></div>
+                <div class="bank-info-row" style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;"><span>Amount Due:</span><b class="text-green" id="ownerAmountDueDisplay">₦5,000</b></div>
+            </div>
+            <button class="btn-blue" onclick="window.copyOwnerAccount()">📋 Copy Account Number</button>
+            <button class="btn-whatsapp" style="margin-top:8px;" onclick="window.sendPaymentReceiptWhatsApp()">💬 Send Receipt on WhatsApp</button>
+            <button class="btn-dark" style="margin-top:8px;" onclick="document.getElementById('bankModal').style.display='none'">Back</button>
+        </div>
+    </div>
+
+    <div id="mod-email-forgot-pin" class="modal">
+        <div class="modal-content" style="max-width: 420px; text-align: center;">
+            <span style="font-size: 38px;">📧</span>
+            <h3 style="margin: 6px 0 2px; color: #0d47a1;">Reset Security PIN</h3>
+            <div id="fp-email-step-1">
+                <input type="text" id="fpEmailBizCode" placeholder="Enter Store Code" style="text-transform:uppercase; text-align:center; font-weight:bold;">
+                <button class="btn-blue" id="btnSendEmailOtp" onclick="window.sendEmailOtpForPinReset()">📨 Send Code to My Email</button>
+                <button class="btn-dark" onclick="closeModals()">Cancel</button>
+            </div>
+            <div id="fp-email-step-2" style="display: none;">
+                <p style="font-size:12px; color:#166534;">Code sent to: <b id="fpMaskedEmail"></b></p>
+                <input type="text" id="fpEmailOtpInput" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 4px; font-size: 18px; font-weight: bold;">
+                <input type="password" id="fpEmailNewPin" placeholder="New PIN" maxlength="8" style="text-align: center;">
+                <button class="btn-green" id="btnVerifyEmailOtp" onclick="window.verifyEmailOtpAndSetNewPin()">✅ Save New PIN &amp; Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mod-credit" class="modal"><div class="modal-content"><h3>📝 Credit Sale</h3><input type="text" id="c-name" placeholder="Customer Name"><input type="tel" id="c-phone" placeholder="Phone Number"><button class="btn-green" onclick="runIf(window.checkout, 'credit')">Confirm</button><button class="btn-red" onclick="closeModals()">Cancel</button></div></div>
+    
+    <div id="mod-prod" class="modal">
+        <div class="modal-content">
+            <h3>📦 Product Details</h3>
+            <input type="hidden" id="p-id"><input type="text" id="p-name" placeholder="Name">
+            <select id="p-category" style="margin-bottom:10px;"></select>
+            <input type="number" id="p-price" placeholder="Price">
+            <label style="font-size:12px; color:#555;">Items inside 1 Pack / Crate:</label><input type="number" id="p-items-pack" value="12">
+            <label style="font-size:12px; color:#555;">Initial Opening Stock (pieces):</label><input type="number" id="p-stock" placeholder="Initial Qty">
+            <input type="date" id="p-expiry" style="margin-bottom:10px;">
+            <button class="btn-green" onclick="runIf(window.saveProduct)">Save Product</button>
+            <button class="btn-red" onclick="closeModals()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="mod-pay" class="modal"><div class="modal-content"><h3>💰 Receive Payment</h3><p id="pay-info"></p><input type="hidden" id="pay-id"><select id="pay-method"><option value="Cash">💵 Cash</option><option value="Transfer">🏦 Transfer</option></select><input type="number" id="pay-amt"><button class="btn-green" onclick="runIf(window.processPayment)">Save Payment</button><button class="btn-red" onclick="closeModals()">Cancel</button></div></div>
+    <div id="mod-manual" class="modal"><div class="modal-content"><h3>➕ Add/Edit Debt</h3><input type="hidden" id="m-id"><input type="text" id="m-name" placeholder="Name"><input type="text" id="m-phone" placeholder="Phone"><input type="number" id="m-amt" placeholder="Total Amount"><input type="text" id="m-desc" placeholder="Notes"><button class="btn-green" onclick="runIf(window.saveManualDebt)">Save</button><button class="btn-red" onclick="closeModals()">Cancel</button></div></div>
+    <div id="mod-hist" class="modal"><div class="modal-content"><h3>📜 Ledger</h3><h4 id="h-name" style="color:#0d47a1;"></h4><div id="h-list"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
+    <div id="mod-lowstock" class="modal"><div class="modal-content"><h3 style="color:#d32f2f;">⚠️ Low Stock Alert</h3><div id="lowStockList"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
+    <div id="mod-expiring" class="modal"><div class="modal-content"><h3 style="color:#e65100;">⚠️ Expiring Soon</h3><div id="expiringList"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
+    <div id="mod-goods-bought" class="modal"><div class="modal-content"><h3 style="color:#0d47a1;">📦 Goods Bought</h3><div id="goodsBoughtList" style="max-height:300px; overflow-y:auto;"></div><button class="btn-dark" onclick="closeModals()" style="margin-top:10px;">Close</button></div></div>
+    <div id="mod-goods-sold" class="modal"><div class="modal-content"><h3 style="color:#2e7d32;">🛒 Goods Sold</h3><div id="goodsSoldList" style="max-height:300px; overflow-y:auto;"></div><button class="btn-dark" onclick="closeModals()" style="margin-top:10px;">Close</button></div></div>
+    <div id="mod-scan" class="modal"><div class="modal-content"><h3>📷 Barcode Scanner</h3><div id="reader" style="width:100%"></div><button class="btn-red" onclick="window.stopScan()">Close</button></div></div>
+
+    <script>
+        function switchAuthMode(mode) {
+            document.getElementById('formAuthLogin').style.display = mode === 'login' ? 'block' : 'none';
+            document.getElementById('formAuthRegister').style.display = mode === 'register' ? 'block' : 'none';
+            document.getElementById('tabAuthLogin').classList.toggle('active', mode === 'login');
+            document.getElementById('tabAuthRegister').classList.toggle('active', mode === 'register');
+        }
+
+        function nav(id, btn) {
+            if (id === 'sec-market' && window.currentPlan !== 'premium') {
+                if(!confirm("🔒 The Market Buyer Workspace is a Premium Feature.\nUpgrade now to access?")) return;
+                openSubscriptionModal();
+                return;
+            }
+
+            document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
+            document.getElementById(id).classList.add('active-section');
+            document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            
+            if(id === 'sec-market') {
+                window.syncMarketFrame();
+            }
+            if(id === 'sec-debt' && window.renderDebtors) window.renderDebtors();
+            if(id === 'sec-stock' && window.renderStock) window.renderStock();
+            if(id === 'sec-dash' && window.renderDash) window.renderDash();
+        }
+
+        function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); if(window.stopScan) window.stopScan(); }
+        function openCreditModal() { document.getElementById('mod-credit').style.display='flex'; }
+        function openSubscriptionModal() { document.getElementById('subModal').style.display='flex'; }
+        function openBankPaymentModal() { document.getElementById('subModal').style.display='none'; document.getElementById('bankModal').style.display='flex'; }
+        function openProdModal() { document.getElementById('mod-prod').style.display='flex'; }
+        function openManualDebt() { document.getElementById('mod-manual').style.display='flex'; }
+        function runIf(fn, arg) { if(typeof fn === 'function') fn(arg); else alert("Loading... Please wait."); }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, setDoc, query, orderBy, limit, increment, getDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const EMAILJS_PUBLIC_KEY = "vzvGJIBXA7tWlRyta";
+        const EMAILJS_SERVICE_ID = "service_4ahwty5";
+        const EMAILJS_TEMPLATE_ID = "template_v6cbqrs";
+
+        if (window.emailjs) emailjs.init(EMAILJS_PUBLIC_KEY);
+
+        const shopConfig = { 
+            apiKey: "AIzaSyCqmaIDptWNk8v5E5Sz5XKKSAmk6FNX6Yo", 
+            authDomain: "credit-record-24f1e.firebaseapp.com", 
+            projectId: "credit-record-24f1e", 
+            storageBucket: "credit-record-24f1e.firebasestorage.app", 
+            messagingSenderId: "181078991416", 
+            appId: "1:181078991416:web:6e562cccc19767561b7ccd"
+        };
+
+        const USER_NAME = "Admin";
+        const app = initializeApp(shopConfig);
+        const db = getFirestore(app);
+
+        let livePaymentConfig = { bankName: "Direct Transfer", accountNumber: "Contact Admin", accountName: "STARBITE", whatsappNumber: "2348000000000", premiumPrice: 5000 };
+
+        onSnapshot(doc(db, "app_settings", "payment_config"), (snap) => {
+            if (snap.exists()) {
+                livePaymentConfig = snap.data();
+                document.getElementById('ownerBankDisplay').innerText = livePaymentConfig.bankName || 'Direct Transfer';
+                document.getElementById('ownerAccountDisplay').innerText = livePaymentConfig.accountNumber || 'Contact Admin';
+                document.getElementById('ownerNameDisplay').innerText = livePaymentConfig.accountName || 'STARBITE';
+                document.getElementById('ownerAmountDueDisplay').innerText = '₦' + Number(livePaymentConfig.premiumPrice || 5000).toLocaleString();
+                document.getElementById('displayPlanPrice').innerHTML = `₦${Number(livePaymentConfig.premiumPrice || 5000).toLocaleString()} <small style="font-size:12px;">/ month</small>`;
+            }
+        });
+
+        let currentBizId = localStorage.getItem('starbite_active_biz_id') || '';
+        let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
+        window.currentPlan = 'trial';
+        let currentShopData = null;
+
+        window.products = [];
+        let sales = [], debtors = [], trash = [], cart = [], filteredProducts = [];
+        let marketData = { transactions: [] };
+        let currentStockCatFilter = 'all';
+
+        let unsubProducts = null, unsubSales = null, unsubDebtors = null, unsubTrash = null, unsubShopMeta = null, unsubMarket = null;
+
+        window.syncMarketFrame = () => {
+            const frame = document.getElementById('marketFrame');
+            if (frame && currentBizId) {
+                const targetSrc = `market.html?biz=${encodeURIComponent(currentBizId)}&staff=${isStaffRole}`;
+                if (!frame.src.includes(targetSrc)) {
+                    frame.src = targetSrc;
+                }
+            }
+        };
+
+        window.checkAuthDisplay = () => {
+            if (!currentBizId) {
+                document.getElementById('view-auth').style.display = 'flex';
+                document.getElementById('view-app').style.display = 'none';
+            } else {
+                document.getElementById('view-auth').style.display = 'none';
+                document.getElementById('view-app').style.display = 'block';
+                window.syncMarketFrame();
+            }
+        };
+
+        window.logoutBusiness = () => {
+            if(!confirm("Log out and return to front login screen?")) return;
+            localStorage.removeItem('starbite_active_biz_id');
+            currentBizId = '';
+            if (unsubProducts) unsubProducts();
+            if (unsubSales) unsubSales();
+            if (unsubDebtors) unsubDebtors();
+            if (unsubTrash) unsubTrash();
+            if (unsubShopMeta) unsubShopMeta();
+            if (unsubMarket) unsubMarket();
+            window.checkAuthDisplay();
+        };
+
+        window.loginBusiness = async () => {
+            const code = (document.getElementById('loginBizCode').value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+            const pin = (document.getElementById('loginBizPin').value || '').trim();
+
+            if (!code) return alert("Please enter your Business Code.");
+            if (!pin) return alert("Please enter your Security PIN to log in.");
+
+            try {
+                const snap = await getDoc(doc(db, "shops", code));
+                if (!snap.exists()) {
+                    if (code === 'STARBITE') {
+                        await setDoc(doc(db, "shops", "STARBITE"), { name: "Starbite Shop", code: "STARBITE", pin: pin || "1234", plan: "trial", trialExpiresAt: Date.now() + 1209600000, createdAt: Date.now() });
+                    } else {
+                        return alert(`❌ Business code "${code}" does not exist. Click 'Create Shop' to register.`);
+                    }
+                } else {
+                    const data = snap.data();
+                    if (pin !== String(data.pin || '1234').trim()) {
+                        return alert("❌ Incorrect Security PIN for " + code);
+                    }
+                }
+
+                currentBizId = code;
+                localStorage.setItem('starbite_active_biz_id', code);
+                window.checkAuthDisplay();
+                window.initBusinessListeners();
+            } catch(e) { alert("Login failed: " + e.message); }
+        };
+
+        window.registerBusiness = async () => {
+            const name = (document.getElementById('regBizName').value || '').trim();
+            const code = (document.getElementById('regBizCode').value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+            const phone = (document.getElementById('regBizPhone').value || '').trim();
+            const email = (document.getElementById('regBizEmail').value || '').trim().toLowerCase();
+            const pin = (document.getElementById('regBizPin').value || '').trim() || '1234';
+
+            if (!name || !code) return alert("Business Name and Store Code are required.");
+            if (!email || !email.includes('@')) return alert("A valid Owner Email is required.");
+
+            try {
+                const check = await getDoc(doc(db, "shops", code));
+                if (check.exists()) return alert(`❌ Store code "${code}" is already taken.`);
+
+                await setDoc(doc(db, "shops", code), { name, code, phone, email, pin, plan: "trial", trialExpiresAt: Date.now() + 1209600000, createdAt: Date.now() });
+                currentBizId = code;
+                localStorage.setItem('starbite_active_biz_id', code);
+                window.checkAuthDisplay();
+                window.initBusinessListeners();
+                alert(`🎉 Business "${name}" registered with 14 Days Free Trial!`);
+            } catch(e) { alert("Registration failed: " + e.message); }
+        };
+
+        window.openEmailForgotPinModal = () => {
+            document.getElementById('fpEmailBizCode').value = (document.getElementById('loginBizCode').value || '').trim().toUpperCase();
+            document.getElementById('fp-email-step-1').style.display = 'block';
+            document.getElementById('fp-email-step-2').style.display = 'none';
+            document.getElementById('mod-email-forgot-pin').style.display = 'flex';
+        };
+
+        window.sendEmailOtpForPinReset = async () => {
+            const code = (document.getElementById('fpEmailBizCode').value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+            if (!code) return alert("Please enter Store Code.");
+
+            const snap = await getDoc(doc(db, "shops", code));
+            if (!snap.exists()) return alert("Store Code not found.");
+            const email = snap.data().email;
+            if (!email) return alert("No email found for this shop.");
+
+            const otp = String(Math.floor(100000 + Math.random() * 900000));
+            await updateDoc(doc(db, "shops", code), { recoveryOtp: otp, recoveryExpiresAt: Date.now() + 600000 });
+
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, shop_name: snap.data().name || code, store_code: code, otp_code: otp });
+            document.getElementById('fpMaskedEmail').innerText = email;
+            document.getElementById('fp-email-step-1').style.display = 'none';
+            document.getElementById('fp-email-step-2').style.display = 'block';
+            alert("Code sent to your email!");
+        };
+
+        window.verifyEmailOtpAndSetNewPin = async () => {
+            const otp = (document.getElementById('fpEmailOtpInput').value || '').trim();
+            const pin = (document.getElementById('fpEmailNewPin').value || '').trim();
+            const code = (document.getElementById('fpEmailBizCode').value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+
+            const snap = await getDoc(doc(db, "shops", code));
+            const data = snap.data();
+            if (data.recoveryOtp !== otp || Date.now() > data.recoveryExpiresAt) return alert("Invalid or expired code.");
+
+            await updateDoc(doc(db, "shops", code), { pin, recoveryOtp: null, recoveryExpiresAt: null });
+            alert("✅ New PIN saved! You can now log in.");
+            closeModals();
+            document.getElementById('loginBizCode').value = code;
+            document.getElementById('loginBizPin').value = pin;
+        };
+
+        window.copyOwnerAccount = () => {
+            const acc = livePaymentConfig.accountNumber;
+            navigator.clipboard.writeText(acc).then(() => alert(`Copied account: ${acc}`)).catch(()=>prompt("Copy:", acc));
+        };
+
+        window.sendPaymentReceiptWhatsApp = () => {
+            const price = Number(livePaymentConfig.premiumPrice || 5000).toLocaleString();
+            let msg = `*PAYMENT RECEIPT*\n🏪 Store: ${currentShopData?.name || currentBizId}\n🔑 Code: ${currentBizId}\n💰 Amount: ₦${price}\nTransferred to ${livePaymentConfig.bankName}. Please activate my Premium!`;
+            let phone = (livePaymentConfig.whatsappNumber || '').replace(/\D/g, '');
+            if (!phone.startsWith('234')) phone = '234' + phone;
+            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        window.updatePlanUI = (shopData) => {
+            currentShopData = shopData;
+            const isPrem = shopData.plan === 'premium' && (!shopData.subscriptionExpiresAt || shopData.subscriptionExpiresAt > Date.now());
+            window.currentPlan = isPrem ? 'premium' : 'trial';
+
+            document.getElementById('planBadge').innerText = isPrem ? '👑 Premium Plan' : '⭐ Plan: Free Trial';
+            document.getElementById('trialBanner').style.display = isPrem ? 'none' : 'flex';
+        };
+
+        window.toggleStaffRole = async () => {
+            if (!isStaffRole) {
+                isStaffRole = true;
+                localStorage.setItem('starbite_is_staff', 'true');
+                document.body.classList.add('is-staff');
+                document.getElementById('roleBadge').innerText = '👷 Worker Mode';
+            } else {
+                const pin = prompt("Enter PIN to unlock Admin:");
+                if (pin === String(currentShopData?.pin || '1234')) {
+                    isStaffRole = false;
+                    localStorage.setItem('starbite_is_staff', 'false');
+                    document.body.classList.remove('is-staff');
+                    document.getElementById('roleBadge').innerText = '👑 Admin';
+                } else alert("Incorrect PIN.");
+            }
+            window.syncMarketFrame();
+        };
+
+        window.initBusinessListeners = () => {
+            if (!currentBizId) return;
+
+            document.getElementById('topShopName').innerText = currentBizId;
+            unsubShopMeta = onSnapshot(doc(db, "shops", currentBizId), s => { if(s.exists()) window.updatePlanUI(s.data()); });
+
+            unsubProducts = onSnapshot(collection(db, "shops", currentBizId, "products"), snap => {
+                window.products = snap.docs.filter(d => d.id !== '_backup').map(d => ({ id: d.id, ...d.data() }));
+                filteredProducts = window.products.filter(p => p.name);
+                window.renderShopProducts();
+                window.renderStock();
+                window.renderDash();
+                window.renderQuickTapGrid();
+            });
+
+            unsubSales = onSnapshot(query(collection(db, "shops", currentBizId, "sales"), orderBy("date", "desc"), limit(100)), snap => {
+                sales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.renderShopHistory();
+                window.renderDash();
+            });
+
+            unsubDebtors = onSnapshot(collection(db, "shops", currentBizId, "debtors"), snap => {
+                debtors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.renderDebtors();
+                window.renderDash();
+            });
+
+            unsubMarket = onSnapshot(doc(db, "shops", currentBizId, "market", "main_store"), snap => {
+                if(snap.exists()) {
+                    marketData = snap.data();
+                    window.renderDash();
+                }
+            });
+        };
+
+        // Dash
+        window.renderDash = () => {
+            const today = new Date().toISOString().split('T')[0];
+            const todayCash = sales.filter(s => s.date && s.date.startsWith(today) && (s.type === 'Cash' || s.type === 'Debt Payment')).reduce((a, b) => a + Number(b.total || 0), 0);
+            const totalOwed = debtors.reduce((a,b) => a + (b.totalDebt - (b.payments||[]).reduce((x,y)=>x+y.amount,0)), 0);
+            
+            let totalBought = 0;
+            (marketData.transactions || []).forEach(t => (t.items || []).forEach(i => totalBought += (Number(i.qty || 0) * (Number(i.packQty) || 1))));
+            let totalSold = 0;
+            sales.forEach(s => (s.items || []).forEach(si => totalSold += Number(si.qty || 0)));
+
+            document.getElementById('d-today').innerText = "₦" + todayCash.toLocaleString();
+            document.getElementById('d-owed').innerText = "₦" + totalOwed.toLocaleString();
+            document.getElementById('d-mkt-bought').innerText = totalBought.toLocaleString() + " pcs";
+            document.getElementById('d-mkt-sold').innerText = totalSold.toLocaleString() + " pcs";
+            document.getElementById('d-stock').innerText = filteredProducts.filter(p => (p.stock || 0) <= 5).length;
+        };
+
+        // POS Sell & Cart
+        window.renderShopProducts = () => {
+            const q = document.getElementById('search').value.toLowerCase();
+            const div = document.getElementById('prodList'); div.innerHTML = '';
+            filteredProducts.forEach((p, i) => {
+                if(p.name.toLowerCase().includes(q)) {
+                    div.innerHTML += `<div onclick="window.selProd(${i})" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between;">
+                        <div><b>${p.name}</b> <small style="color:#666;">(Stock: ${p.stock || 0})</small></div><span>₦${p.price}</span>
+                    </div>`;
+                }
+            });
+        };
+        window.selProd = i => { document.getElementById('selIndex').value = i; document.getElementById('qty').focus(); };
+
+        window.addToCart = () => {
+            const idx = parseInt(document.getElementById('selIndex').value);
+            const qty = parseInt(document.getElementById('qty').value);
+            if(isNaN(idx) || !qty) return;
+            const p = filteredProducts[idx];
+            if(qty > (p.stock || 0)) return alert("Not enough shop stock available!");
+
+            const exist = cart.find(c => c.id === p.id);
+            if(exist) { exist.qty += qty; exist.sub = exist.price * exist.qty; }
+            else cart.push({ ...p, qty, sub: p.price * qty });
+            window.renderCart();
+            document.getElementById('qty').value = '';
+        };
+
+        window.renderCart = () => {
+            const div = document.getElementById('cartList'); div.innerHTML = ''; let total = 0;
+            cart.forEach((c, i) => { 
+                total += c.sub; 
+                div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #eee;">
+                    <span>${c.name} (x${c.qty})</span>
+                    <div><button class="btn-blue btn-mini" onclick="window.modQty(${i}, -1)">-</button><button class="btn-blue btn-mini" onclick="window.modQty(${i}, 1)">+</button> ₦${c.sub}</div>
+                </div>`; 
+            });
+            document.getElementById('cartTotal').innerText = total.toLocaleString();
+        };
+
+        window.modQty = (i, delta) => {
+            cart[i].qty += delta;
+            if(cart[i].qty <= 0) cart.splice(i, 1);
+            else cart[i].sub = cart[i].price * cart[i].qty;
+            window.renderCart();
+        };
+
+        window.calcChange = () => {
+            const total = parseInt(document.getElementById('cartTotal').innerText.replace(/,/g,'')) || 0;
+            const pay = parseInt(document.getElementById('payInput').value) || 0;
+            document.getElementById('changeTxt').innerText = "Change: ₦" + (pay > total ? pay - total : 0).toLocaleString();
+        };
+
+        window.checkout = async (type) => {
+            if(!cart.length) return;
+            for(const c of cart) {
+                await updateDoc(doc(db, "shops", currentBizId, "products", c.id), { stock: increment(-c.qty) });
+            }
+            const total = cart.reduce((a,b)=>a+b.sub,0);
+            const items = cart.map(c=>({ name: c.name, qty: c.qty, price: c.price, sub: c.sub }));
+            const desc = cart.map(c=>`${c.name}(x${c.qty})`).join(', ');
+
+            if(type === 'cash') {
+                await addDoc(collection(db, "shops", currentBizId, "sales"), { date: new Date().toISOString(), desc, items, total, type: 'Cash', soldBy: USER_NAME });
+            } else {
+                const name = document.getElementById('c-name').value;
+                await addDoc(collection(db, "shops", currentBizId, "debtors"), { name, phone: document.getElementById('c-phone').value, desc, totalDebt: total, payments: [], date: new Date().toISOString() });
+                await addDoc(collection(db, "shops", currentBizId, "sales"), { date: new Date().toISOString(), desc: `Credit: ${name}`, items, total, type: 'Credit', soldBy: USER_NAME });
+                closeModals();
+            }
+            cart = [];
+            window.renderCart();
+            alert("Sale recorded!");
+        };
+
+        // Stock Tab with Eggs and Freezers
+        window.renderStock = () => {
+            const div = document.getElementById('stockList'); if(!div) return;
+            div.innerHTML = '';
+            filteredProducts.forEach(p => {
+                const isEgg = (p.name || '').toLowerCase().includes('egg');
+                div.innerHTML += `<div class="card" style="padding:10px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div><b>${p.name}</b><br><small>Available: ${p.stock || 0} pcs | ₦${p.price}</small></div>
+                        <div style="display:flex; gap:4px;">
+                            ${isEgg ? `<button class="btn-orange btn-tbl" onclick="window.useEggCrate('${p.id}')">🥚 Use Crate</button>` : `<button class="btn-blue btn-tbl" onclick="window.transferToFreezer('${p.id}')">❄️ Freezer</button>`}
+                            <button class="btn-green btn-tbl admin-only" onclick="window.addStock('${p.id}')">+ Stock</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        };
+
+        window.addStock = async (id) => {
+            const n = prompt("Add quantity (pieces):");
+            if(n && !isNaN(parseInt(n))) {
+                await updateDoc(doc(db, "shops", currentBizId, "products", id), { stock: increment(parseInt(n)) });
+            }
+        };
+
+        window.transferToFreezer = async (id) => {
+            const p = window.products.find(x => x.id === id);
+            const packs = prompt(`Packs of ${p.name} to move into freezer?`, "1");
+            if(packs && !isNaN(parseInt(packs))) {
+                const itemsPerPack = p.itemsPerPack || 12;
+                await updateDoc(doc(db, "shops", currentBizId, "products", id), {
+                    stock: increment(-(parseInt(packs) * itemsPerPack)),
+                    freezerPacks: increment(parseInt(packs))
+                });
+                alert("Moved to freezer!");
+            }
+        };
+
+        window.useEggCrate = async (id) => {
+            const crates = prompt("How many crates were used?", "1");
+            if(crates && !isNaN(parseInt(crates))) {
+                await updateDoc(doc(db, "shops", currentBizId, "products", id), { stock: increment(-(parseInt(crates) * 30)) });
+                alert("Egg crate deducted!");
+            }
+        };
+
+        window.renderQuickTapGrid = () => {
+            const grid = document.getElementById('quickTapGrid'); if(!grid) return;
+            grid.innerHTML = '';
+            filteredProducts.filter(p => (p.freezerPacks || 0) > 0).forEach(p => {
+                grid.innerHTML += `<button class="btn-blue" style="font-size:11px; padding:6px 2px; margin:0;" onclick="window.selProd(${filteredProducts.indexOf(p)}); document.getElementById('qty').value=1; window.addToCart();">${p.name}</button>`;
+            });
+        };
+
+        window.renderDebtors = () => {
+            const q = document.getElementById('debtSearch')?.value.toLowerCase() || '';
+            const tbody = document.getElementById('debtTableBody');
+            tbody.innerHTML = debtors.filter(d => d.name.toLowerCase().includes(q)).map(d => {
+                const paid = (d.payments || []).reduce((a,b)=>a+b.amount,0);
+                const rem = d.totalDebt - paid;
+                return `<tr>
+                    <td><b>${d.name}</b><br><small>${d.desc}</small></td>
+                    <td class="admin-only">₦${d.totalDebt}</td>
+                    <td class="admin-only text-green">₦${paid}</td>
+                    <td class="admin-only text-red">₦${rem}</td>
+                    <td><span class="badge ${rem<=0?'bg-full':'bg-over'}">${rem<=0?'Paid':'Owed'}</span></td>
+                    <td><button class="btn-green btn-tbl" onclick="window.payDebt('${d.id}')">Pay</button></td>
+                </tr>`;
+            }).join('');
+        };
+
+        window.payDebt = id => {
+            const amt = prompt("Amount received:");
+            if(amt && !isNaN(parseInt(amt))) {
+                const d = debtors.find(x => x.id === id);
+                updateDoc(doc(db, "shops", currentBizId, "debtors", id), {
+                    payments: [...(d.payments||[]), { amount: parseInt(amt), date: new Date().toISOString() }]
+                });
+            }
+        };
+
+        window.renderShopHistory = () => {
+            const div = document.getElementById('mainHistList'); if(!div) return;
+            div.innerHTML = sales.map(s => `<div style="padding:8px; border-bottom:1px solid #eee;">
+                <b>₦${s.total}</b> - <small>${s.desc} (${s.type})</small>
+            </div>`).join('');
+        };
+
+        window.genReport = (type) => {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            pdf.text("STARBITE SALES REPORT", 14, 15);
+            pdf.autoTable({
+                head: [['Date', 'Description', 'Type', 'Total']],
+                body: sales.map(s => [new Date(s.date).toLocaleDateString(), s.desc, s.type, "₦" + Number(s.total || 0).toLocaleString()])
+            });
+            pdf.save(`sales_report_${type}.pdf`);
+        };
+
+        window.checkAuthDisplay();
+        if (currentBizId) window.initBusinessListeners();
+    </script>
+</body>
+</html>
