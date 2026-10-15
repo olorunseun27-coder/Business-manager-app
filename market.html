@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARBITE - Market Buyer Workspace</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --market-pri: #0d47a1;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --green: #12b76a;
+            --red: #f04438;
+        }
+        body.is-staff .admin-only { display: none !important; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 12px; color: #172033; }
+        * { box-sizing: border-box; }
+        
+        .mkt-sub-nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .mkt-sub-btn { background: #edf2f7; color: #475569; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; border: none; cursor: pointer; }
+        .mkt-sub-btn.active { background: #0d47a1; color: white; }
+        .mkt-page { display: none; }
+        .mkt-page.active-page { display: block; }
+        
+        .card { background: white; padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+        input, select { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 14px; margin-bottom: 8px; box-sizing: border-box; }
+        button { padding: 9px; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: white; }
+        .btn-green { background: #2e7d32; } .btn-blue { background: #1565c0; } .btn-red { background: #c62828; } .btn-dark { background: #37474f; } .btn-whatsapp { background: #25d366; }
+        .btn-tbl { padding: 5px 9px; font-size: 11px; width: auto; display: inline-block; }
+
+        .table-responsive { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 580px; }
+        th { background: #343a40; color: white; padding: 9px; font-size: 11px; text-align: left; }
+        td { padding: 9px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+
+        .badge { font-size: 10px; padding: 3px 6px; border-radius: 10px; font-weight: bold; }
+        .stock-badge-green { background: #dcfce7; color: #15803d; }
+        .stock-badge-red { background: #fee2e2; color: #b91c1c; }
+
+        .mkt-sticky-bar { position: sticky; bottom: 10px; background: #1e1b4b; color: #fff; padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:99999; align-items:center; justify-content:center; }
+        .modal-content { background:white; padding:18px; border-radius: 12px; width:92%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+        .receipt { border: 1px solid #ccc; padding: 14px; background: #fff; font-size: 12px; }
+    </style>
+</head>
+
+<body>
+    <div class="mkt-sub-nav">
+        <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
+        <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
+        <button class="mkt-sub-btn" onclick="showMktPage('mkt-buy')">📦 Buy from Supplier</button>
+        <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-history')">📚 History</button>
+        <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-payments')">💳 Pay Debts</button>
+        <button class="mkt-sub-btn" onclick="showMktPage('mkt-suppliers')">👥 Suppliers</button>
+        <button class="mkt-sub-btn" onclick="showMktPage('mkt-prods')">🏷️ Products</button>
+    </div>
+
+    <!-- 1. Mark to Order -->
+    <div id="mkt-order" class="mkt-page active-page">
+        <div class="card">
+            <h3 style="margin-top:0;">🛒 Mark Products to Order</h3>
+            <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="renderOrderGoodsList()">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:30px;">✓</th>
+                            <th>Product Name</th>
+                            <th>Shop Available</th>
+                            <th class="admin-only">Wholesale</th>
+                            <th>Retail</th>
+                            <th>Supplier</th>
+                            <th style="width:70px;">Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderGoodsTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="mkt-sticky-bar">
+                <div><b id="liveMarkedCount">0 items</b><br><small class="admin-only" id="liveTotalCost">₦0.00</small></div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-whatsapp btn-tbl" onclick="openOrderVoucherModal()">💬 WhatsApp</button>
+                    <button class="btn-green btn-tbl" onclick="saveMarkedToMarketList()">📋 Save List</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Shopping List -->
+    <div id="mkt-needs" class="mkt-page">
+        <div class="card">
+            <h3 style="margin-top:0;">📋 Shopping List</h3>
+            <div id="needsList"></div>
+        </div>
+    </div>
+
+    <!-- 3. Buy from Supplier -->
+    <div id="mkt-buy" class="mkt-page">
+        <div class="card">
+            <h3 style="margin-top:0;">📦 Record Market Purchase</h3>
+            <form onsubmit="saveTransaction(event)">
+                <label>Supplier:</label><select id="tSupplier" required></select>
+                <div id="transactionLines"></div>
+                <button type="button" class="btn-dark" style="padding:6px; font-size:11px; width:auto; margin:5px 0;" onclick="addTransactionLine()">➕ Add Product</button>
+                
+                <label>Payment Status:</label>
+                <select id="tStatus"><option value="paid">Fully Paid</option><option value="credit">On Credit</option></select>
+                <button class="btn-green" type="submit" style="margin-top:10px;">💾 Save &amp; Auto-Refill Shop Stock</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. History -->
+    <div id="mkt-history" class="mkt-page admin-only">
+        <div class="card"><h3>📚 Purchase Orders</h3><div id="historyList"></div></div>
+    </div>
+
+    <!-- 5. Pay Debts -->
+    <div id="mkt-payments" class="mkt-page admin-only">
+        <div class="card"><h3>💳 Supplier Debts</h3><div id="paymentList"></div></div>
+    </div>
+
+    <!-- 6. Suppliers -->
+    <div id="mkt-suppliers" class="mkt-page">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0;">👥 Suppliers</h3>
+                <button class="btn-blue btn-tbl" onclick="openSupplierModal()">+ New</button>
+            </div>
+            <div id="supplierList" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- 7. Products -->
+    <div id="mkt-prods" class="mkt-page">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0;">🏷️ Register Product</h3>
+                <button class="btn-blue btn-tbl" onclick="openProductModal()">+ Product</button>
+            </div>
+            <div id="productList" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- Order Slip Modal -->
+    <div class="modal" id="orderVoucherModal">
+        <div class="modal-content">
+            <h3>Supplier Order Slip</h3>
+            <div id="printOrderVoucher" class="receipt">
+                <h3 style="text-align:center; margin:0 0 5px;">PURCHASE ORDER</h3>
+                <div id="voucherItems"></div>
+            </div>
+            <button class="btn-whatsapp" style="margin-top:10px;" onclick="sendWhatsAppVoucher()">💬 Send via WhatsApp</button>
+            <button class="btn-dark" style="margin-top:5px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div class="modal" id="supplierModal">
+        <div class="modal-content">
+            <h3>Add Supplier</h3>
+            <form onsubmit="saveSupplier(event)">
+                <input id="sName" placeholder="Name" required>
+                <input id="sPhone" placeholder="Phone" required>
+                <input id="sAddress" placeholder="Address">
+                <button class="btn-green" type="submit">Save</button>
+                <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <h3>Add Product</h3>
+            <form onsubmit="saveProduct(event)">
+                <input id="mpName" placeholder="Product Name" required>
+                <select id="mpSupplier" required></select>
+                <input id="mpCost" type="number" placeholder="Wholesale Cost" required>
+                <input id="mpPackQty" type="number" placeholder="Pieces per Pack" value="12" required>
+                <input id="mpSell" type="number" placeholder="Retail Price" required>
+                <button class="btn-green" type="submit">Save</button>
+                <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const shopConfig = { 
+            apiKey: "AIzaSyCqmaIDptWNk8v5E5Sz5XKKSAmk6FNX6Yo", 
+            authDomain: "credit-record-24f1e.firebaseapp.com", 
+            projectId: "credit-record-24f1e", 
+            storageBucket: "credit-record-24f1e.firebasestorage.app", 
+            messagingSenderId: "181078991416", 
+            appId: "1:181078991416:web:6e562cccc19767561b7ccd"
+        };
+
+        const app = initializeApp(shopConfig);
+        const db = getFirestore(app);
+
+        // Reads business code & staff mode from URL or storage
+        const params = new URLSearchParams(window.location.search);
+        const bizId = params.get('biz') || localStorage.getItem('starbite_active_biz_id') || 'STARBITE';
+        const isStaff = params.get('staff') === 'true' || localStorage.getItem('starbite_is_staff') === 'true';
+
+        if (isStaff) document.body.classList.add('is-staff');
+
+        let marketDb = { suppliers: [], products: [], transactions: [], needs: [] };
+        let markedOrderState = {};
+
+        window.showMktPage = id => {
+            document.querySelectorAll('.mkt-page').forEach(p=>p.classList.remove('active-page'));
+            document.getElementById(id).classList.add('active-page');
+            document.querySelectorAll('.mkt-sub-btn').forEach(b=>b.classList.remove('active'));
+            event.target.classList.add('active');
+        };
+
+        window.closeModals = () => document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+        window.openSupplierModal = () => document.getElementById('supplierModal').style.display='flex';
+        window.openProductModal = () => { window.populateSuppliers(); document.getElementById('productModal').style.display='flex'; };
+
+        onSnapshot(doc(db, "shops", bizId, "market", "main_store"), snap => {
+            if(snap.exists()) {
+                marketDb = snap.data();
+                window.renderOrderGoodsList();
+                window.renderSuppliers();
+                window.renderProducts();
+                window.renderHistory();
+            }
+        });
+
+        window.renderOrderGoodsList = () => {
+            const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+            const tbody = document.getElementById('orderGoodsTableBody'); if(!tbody) return;
+            tbody.innerHTML = (marketDb.products || []).filter(p=>p.name.toLowerCase().includes(q)).map(p => {
+                const chk = markedOrderState[p.id];
+                return `<tr>
+                    <td><input type="checkbox" ${chk?'checked':''} onchange="window.toggleMark('${p.id}', this.checked)"></td>
+                    <td><b>${p.name}</b></td>
+                    <td><span class="badge stock-badge-green">${p.stock || 0} pcs</span></td>
+                    <td class="admin-only">₦${p.cost || 0}</td>
+                    <td>₦${p.sell || 0}</td>
+                    <td>${(marketDb.suppliers.find(s=>s.id===p.supplierId)||{}).name || 'Supplier'}</td>
+                    <td>${chk ? `<input type="number" min="1" value="${chk.qty}" style="padding:2px; margin:0;" oninput="window.changeQty('${p.id}', this.value)">` : '—'}</td>
+                </tr>`;
+            }).join('');
+        };
+
+        window.toggleMark = (id, chk) => {
+            if(chk) markedOrderState[id] = { qty: 1 };
+            else delete markedOrderState[id];
+            window.updateBar();
+            window.renderOrderGoodsList();
+        };
+
+        window.changeQty = (id, val) => {
+            if(markedOrderState[id]) markedOrderState[id].qty = parseInt(val) || 1;
+            window.updateBar();
+        };
+
+        window.updateBar = () => {
+            const count = Object.keys(markedOrderState).length;
+            document.getElementById('liveMarkedCount').innerText = `${count} items marked`;
+        };
+
+        window.openOrderVoucherModal = () => {
+            const list = Object.keys(markedOrderState).map(id => {
+                const p = marketDb.products.find(x=>x.id===id);
+                return `<div>${p.name} - <b>${markedOrderState[id].qty} packs</b></div>`;
+            }).join('');
+            document.getElementById('voucherItems').innerHTML = list || 'No items marked';
+            document.getElementById('orderVoucherModal').style.display='flex';
+        };
+
+        window.sendWhatsAppVoucher = () => {
+            let msg = `*PURCHASE ORDER*\n`;
+            Object.keys(markedOrderState).forEach((id, i) => {
+                const p = marketDb.products.find(x=>x.id===id);
+                msg += `${i+1}. ${p.name} - ${markedOrderState[id].qty} packs\n`;
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        window.saveSupplier = async e => {
+            e.preventDefault();
+            marketDb.suppliers = marketDb.suppliers || [];
+            marketDb.suppliers.push({
+                id: 'sup_' + Date.now(),
+                name: document.getElementById('sName').value,
+                phone: document.getElementById('sPhone').value,
+                address: document.getElementById('sAddress').value
+            });
+            await setDoc(doc(db, "shops", bizId, "market", "main_store"), marketDb, { merge: true });
+            closeModals();
+            alert("Supplier saved!");
+        };
+
+        window.saveProduct = async e => {
+            e.preventDefault();
+            marketDb.products = marketDb.products || [];
+            const newProd = {
+                id: 'prod_' + Date.now(),
+                name: document.getElementById('mpName').value,
+                supplierId: document.getElementById('mpSupplier').value,
+                cost: parseFloat(document.getElementById('mpCost').value) || 0,
+                packQty: parseInt(document.getElementById('mpPackQty').value) || 12,
+                sell: parseFloat(document.getElementById('mpSell').value) || 0
+            };
+            marketDb.products.push(newProd);
+            await setDoc(doc(db, "shops", bizId, "market", "main_store"), marketDb, { merge: true });
+            closeModals();
+            alert("Product registered in market!");
+        };
+
+        window.populateSuppliers = () => {
+            const sel = document.getElementById('mpSupplier');
+            sel.innerHTML = (marketDb.suppliers || []).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+            document.getElementById('tSupplier').innerHTML = sel.innerHTML;
+        };
+
+        window.addTransactionLine = () => {
+            const div = document.createElement('div');
+            div.innerHTML = `<select class="tx-p" style="margin-bottom:4px;">${(marketDb.products||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select>
+            <input class="tx-q" type="number" min="1" placeholder="Packs" value="1">`;
+            document.getElementById('transactionLines').appendChild(div);
+        };
+
+        // Purchase auto-refills shop inventory!
+        window.saveTransaction = async e => {
+            e.preventDefault();
+            const supId = document.getElementById('tSupplier').value;
+            const items = [];
+            
+            document.querySelectorAll('#transactionLines div').forEach(r => {
+                const pid = r.querySelector('.tx-p').value;
+                const qty = parseInt(r.querySelector('.tx-q').value) || 1;
+                const p = marketDb.products.find(x=>x.id===pid);
+                items.push({ productId: pid, name: p.name, qty, packQty: p.packQty || 12, cost: p.cost, sell: p.sell });
+            });
+
+            const tx = { id: 'tx_' + Date.now(), date: new Date().toISOString(), supplierId: supId, items };
+            marketDb.transactions = marketDb.transactions || [];
+            marketDb.transactions.push(tx);
+            await setDoc(doc(db, "shops", bizId, "market", "main_store"), marketDb, { merge: true });
+
+            // Automatically increase stock in the shop
+            for(const it of items) {
+                const totalPieces = it.qty * it.packQty;
+                const docId = it.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                await setDoc(doc(db, "shops", bizId, "products", docId), {
+                    name: it.name,
+                    price: it.sell,
+                    cost: it.cost,
+                    stock: increment(totalPieces),
+                    itemsPerPack: it.packQty
+                }, { merge: true });
+            }
+
+            alert("✅ Purchase saved! Shop stock has been automatically increased.");
+            document.getElementById('transactionLines').innerHTML = '';
+        };
+
+        window.renderSuppliers = () => {
+            document.getElementById('supplierList').innerHTML = (marketDb.suppliers || []).map(s => `<div><b>${s.name}</b> (${s.phone})</div>`).join('') || 'No suppliers yet.';
+        };
+
+        window.renderProducts = () => {
+            document.getElementById('productList').innerHTML = (marketDb.products || []).map(p => `<div><b>${p.name}</b> - Retail: ₦${p.sell}</div>`).join('') || 'No products yet.';
+        };
+
+        window.renderHistory = () => {
+            document.getElementById('historyList').innerHTML = (marketDb.transactions || []).map(t => `<div><b>${new Date(t.date).toLocaleDateString()}</b> - ${t.items.length} items</div>`).join('') || 'No history yet.';
+        };
+    </script>
+</body>
+  </html>
