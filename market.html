@@ -7,190 +7,467 @@
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
         :root {
-            --market-pri: #0d47a1;
-            --bg: #f8fafc;
-            --border: #e2e8f0;
+            --primary: #0d47a1;
+            --market-pri: #4f46e5;
+            --bg: #f4f6f8;
+            --card: #fff;
+            --text: #172033;
+            --muted: #667085;
+            --border: #e4e7ec;
             --green: #12b76a;
             --red: #f04438;
+            --orange: #f79009;
+            --purple: #7c3aed;
+            --shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
-        body.is-staff .admin-only { display: none !important; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 12px; color: #172033; }
-        * { box-sizing: border-box; }
         
-        .mkt-sub-nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
-        .mkt-sub-btn { background: #edf2f7; color: #475569; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; border: none; cursor: pointer; }
+        body.is-staff .admin-only { display: none !important; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; user-select: none; color: var(--text); }
+        *{ box-sizing: border-box; }
+        
+        #app-error-banner { display: none; background: #dc3545; color: white; padding: 12px 16px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 99999; font-size: 13px; line-height: 1.5; }
+        
+        #view-market-workspace { padding-bottom: 25px; }
+        .header { background: linear-gradient(135deg, #1e1b4b, #312e81); color: white; padding: 12px 16px; font-size: 17px; font-weight: bold; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 10px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .header-brand { display: flex; align-items: center; gap: 8px; }
+        .header-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .top-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .badge-live { background: #12b76a; color: white; }
+        .badge-syncing { background: #f79009; color: white; }
+        .badge-plan-prem { background: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 800; }
+        .badge-role { background: #37474f; color: #fde047; }
+        .badge-logout { background: rgba(255,255,255,0.2); color: white; }
+        
+        .container { padding: 15px; max-width: 100%; margin: 0 auto; }
+        .card { background: white; padding: 16px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; border: 1px solid var(--border); }
+        
+        /* Sub Navigation */
+        .mkt-sub-nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .mkt-sub-btn { background: #edf2f7; color: #475569; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; width: auto; margin: 0; flex: none; border: none; cursor: pointer; transition: 0.2s; }
         .mkt-sub-btn.active { background: #0d47a1; color: white; }
         .mkt-page { display: none; }
         .mkt-page.active-page { display: block; }
         
-        .card { background: white; padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
-        input, select { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 14px; margin-bottom: 8px; box-sizing: border-box; }
-        button { padding: 9px; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: white; }
-        .btn-green { background: #2e7d32; } .btn-blue { background: #1565c0; } .btn-red { background: #c62828; } .btn-dark { background: #37474f; } .btn-whatsapp { background: #25d366; }
-        .btn-tbl { padding: 5px 9px; font-size: 11px; width: auto; display: inline-block; }
-
-        .table-responsive { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 580px; }
-        th { background: #343a40; color: white; padding: 9px; font-size: 11px; text-align: left; }
-        td { padding: 9px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
-
-        .badge { font-size: 10px; padding: 3px 6px; border-radius: 10px; font-weight: bold; }
-        .stock-badge-green { background: #dcfce7; color: #15803d; }
-        .stock-badge-red { background: #fee2e2; color: #b91c1c; }
-
-        .mkt-sticky-bar { position: sticky; bottom: 10px; background: #1e1b4b; color: #fff; padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        /* Sticky Purchase Bar docked cleanly at bottom */
+        .mkt-sticky-bar { position: sticky; bottom: 12px; background: #1e1b4b; color: #fff; padding: 12px 16px; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); z-index: 90; margin-top: 15px; }
+        .product-line { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; background: #fafbff; }
+        .product-line-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 6px; align-items: end; }
+        @media(max-width: 700px){ .product-line-grid { grid-template-columns: 1fr 1fr; } .product-line-grid .wide { grid-column: 1/-1; } }
+        
+        /* Tables */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
+        thead { background: #343a40; color: white; }
+        th { padding: 11px 9px; text-align: left; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        td { padding: 10px 9px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+        tr:nth-child(even) { background-color: #fafbfc; }
+        .clickable { color: #0d47a1; font-weight: 700; cursor: pointer; text-decoration: underline; }
+        
+        /* Inputs & Buttons */
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 10px; box-sizing: border-box; background: #fafafa; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { border-color: #0d47a1; outline: none; background: white; }
+        button { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; color: white; margin-bottom: 5px; transition: 0.2s; font-family: inherit; }
+        .btn-green { background: #2e7d32; } .btn-blue { background: #1565c0; } .btn-red { background: #c62828; } .btn-orange { background: #ef6c00; } .btn-dark { background: #37474f; } .btn-whatsapp { background: #25d366; color: white; }
+        .btn-purple { background: #7c3aed; }
+        .btn-tbl { padding: 5px 9px; font-size: 11px; border-radius: 4px; margin: 2px; width: auto; display: inline-block; }
+        .btn-mini { padding: 3px 8px; width: auto; display: inline-block; margin: 0 2px; border-radius: 4px; font-size: 12px; }
+        
+        /* Badges & Text */
+        .badge { font-size: 10px; padding: 4px 8px; border-radius: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; text-align: center; }
+        .bg-full { background: #d4edda; color: #155724; } .bg-part { background: #fff3cd; color: #856404; } .bg-over { background: #f8d7da; color: #721c24; }
+        .stock-badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .stock-badge-orange { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .stock-badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .size-big { background: #e0e7ff; color: #3730a3; } .size-small { background: #fef3f2; color: #b42318; }
+        .text-green { color: #28a745; } .text-red { color: #dc3545; } .text-blue { color: #007bff; }
+        
+        /* Modals */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:99999; align-items:center; justify-content:center; }
-        .modal-content { background:white; padding:18px; border-radius: 12px; width:92%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
-        .receipt { border: 1px solid #ccc; padding: 14px; background: #fff; font-size: 12px; }
+        .modal-content { background:white; padding:20px; border-radius: 14px; width:92%; max-width: 500px; animation: popUp 0.25s; max-height: 90vh; overflow-y: auto; }
+        @keyframes popUp { from {transform: scale(0.92); opacity:0;} to {transform: scale(1); opacity:1;} }
+        .receipt { border: 1px solid #d0d5dd; border-radius: 10px; padding: 18px; background: #fff; color: #101828; }
+        .receipt table { min-width: 100%; margin: 10px 0; }
+        .receipt th, .receipt td { padding: 6px 4px; font-size: 12px; }
     </style>
 </head>
 
 <body>
-    <div class="mkt-sub-nav">
-        <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
-        <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
-        <button class="mkt-sub-btn" onclick="showMktPage('mkt-buy')">📦 Buy from Supplier</button>
-        <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-history')">📚 History</button>
-        <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-payments')">💳 Pay Debts</button>
-        <button class="mkt-sub-btn" onclick="showMktPage('mkt-suppliers')">👥 Suppliers</button>
-        <button class="mkt-sub-btn" onclick="showMktPage('mkt-prods')">🏷️ Products</button>
-    </div>
+    <div id="app-error-banner"></div>
 
-    <!-- 1. Mark to Order -->
-    <div id="mkt-order" class="mkt-page active-page">
-        <div class="card">
-            <h3 style="margin-top:0;">🛒 Mark Products to Order</h3>
-            <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="renderOrderGoodsList()">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:30px;">✓</th>
-                            <th>Product Name</th>
-                            <th>Shop Available</th>
-                            <th class="admin-only">Wholesale</th>
-                            <th>Retail</th>
-                            <th>Supplier</th>
-                            <th style="width:70px;">Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody id="orderGoodsTableBody"></tbody>
-                </table>
+    <div id="view-market-workspace">
+        <header class="header">
+            <div class="header-brand">
+                <a href="Business manager app.html#sec-dash" style="color:white; text-decoration:none; margin-right:4px; font-size:18px;">←</a>
+                <span>📋</span> STARBITE Market Buyer
+            </div>
+            <div class="header-badges">
+                <span class="top-badge badge-live" id="cloudStatusBadge" onclick="window.forceCloudSync()">☁️ Live</span>
+                <span class="top-badge badge-plan-prem" id="planBadge">👑 Premium</span>
+                <span class="top-badge badge-role" id="roleBadge" onclick="window.toggleStaffRole()">👑 Admin</span>
+                <a href="Business manager app.html#sec-dash" class="top-badge badge-logout">🚪 <span id="topShopName">Shop</span> (Exit)</a>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- 8 Sub-Pages Navigation -->
+            <div class="mkt-sub-nav">
+                <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
+                <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
+                <button class="mkt-sub-btn" onclick="showMktPage('mkt-buy')">📦 Buy from Supplier</button>
+                <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-history')">📚 History &amp; Orders</button>
+                <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-payments')">💳 Pay Debts</button>
+                <button class="mkt-sub-btn" onclick="showMktPage('mkt-suppliers')">👥 Suppliers</button>
+                <button class="mkt-sub-btn" onclick="showMktPage('mkt-prods')">🏷️ Register Product</button>
+                <button class="mkt-sub-btn admin-only" onclick="showMktPage('mkt-reports')">📊 Profit Reports</button>
             </div>
 
-            <div class="mkt-sticky-bar">
-                <div><b id="liveMarkedCount">0 items</b><br><small class="admin-only" id="liveTotalCost">₦0.00</small></div>
-                <div style="display:flex; gap:6px;">
-                    <button class="btn-whatsapp btn-tbl" onclick="openOrderVoucherModal()">💬 WhatsApp</button>
-                    <button class="btn-green btn-tbl" onclick="saveMarkedToMarketList()">📋 Save List</button>
+            <!-- SUB-PAGE 1: MARK PRODUCTS TO ORDER -->
+            <div id="mkt-order" class="mkt-page active-page">
+                <div class="card">
+                    <h3 style="margin-top:0;">🛒 Mark Products to Order</h3>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Cloud Synced across all phones: Total Bought, Total Sold, and Shop Available Stock.</p>
+                    
+                    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                        <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="window.renderOrderGoodsList()" style="flex:2; margin:0;">
+                        <select id="orderCategoryFilter" onchange="window.renderOrderGoodsList()" style="flex:1; margin:0;"><option value="">All Categories</option></select>
+                        <button class="btn-dark" onclick="window.resetOrderSelection()" style="width:auto; margin:0; padding:8px 12px; font-size:13px;">Reset</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:40px; text-align:center;">Mark</th>
+                                    <th>Product Name</th>
+                                    <th style="text-align:center;">Size</th>
+                                    <th style="text-align:center; background:#f0fdf4;">Total Bought</th>
+                                    <th style="text-align:center; background:#eff6ff;">Sold in Shop</th>
+                                    <th style="text-align:center; background:#fefce8;">Shop Available</th>
+                                    <th class="admin-only">Wholesale</th>
+                                    <th>Retail Sell</th>
+                                    <th>Supplier</th>
+                                    <th style="width:85px; text-align:center;">Order Qty</th>
+                                    <th style="text-align:center; min-width:115px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderGoodsTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mkt-sticky-bar">
+                        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                            <div><small style="color:#aaa;">Marked</small><br><b id="liveMarkedCount">0 items (0 pks)</b></div>
+                            <div class="admin-only"><small style="color:#aaa;">Est. Cost</small><br><b id="liveTotalCost" style="color:#fde047;">₦0.00</b></div>
+                            <div class="admin-only"><small style="color:#aaa;">Expected Profit</small><br><b id="liveTotalProfit" style="color:#4ade80;">₦0.00</b></div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="btn-whatsapp btn-tbl" onclick="window.openOrderVoucherModal('marked')">💬 WhatsApp Slip</button>
+                            <button class="btn-green btn-tbl" onclick="window.saveMarkedToMarketList()">📋 Save to List</button>
+                            <button class="btn-blue btn-tbl" onclick="window.convertMarkedToPurchase()">⚡ Buy &amp; Sync Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 2: MARKET SHOPPING LIST -->
+            <div id="mkt-needs" class="mkt-page">
+                <div class="card">
+                    <h3 style="margin-top:0;">📋 Market Shopping List</h3>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Send confidential price-free order slips to suppliers or fulfill items stall-by-stall.</p>
+                    
+                    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                        <input id="needSearch" placeholder="🔍 Search item, supplier, category..." oninput="window.renderNeeds()" style="flex:2; margin:0;">
+                        <select id="needSupplierFilter" onchange="window.renderNeeds()" style="flex:1; margin:0;"><option value="">All Suppliers</option></select>
+                        <button class="btn-whatsapp" onclick="window.openOrderVoucherModal('needs')" style="width:auto; margin:0; padding:8px 12px; font-size:13px;">💬 WhatsApp Slip</button>
+                    </div>
+
+                    <div id="needsList"></div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 3: BUY FROM SUPPLIER -->
+            <div id="mkt-buy" class="mkt-page">
+                <div class="card">
+                    <h3 id="txFormTitle" style="margin-top:0;">📦 Record Market Purchase</h3>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Purchases logged here <b>immediately refill shop stock</b> in the main selling tab across all phones!</p>
+                    
+                    <form id="transactionForm" onsubmit="window.saveTransaction(event)">
+                        <input type="hidden" id="editingTxId">
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div><label style="font-size:12px; font-weight:bold;">Date</label><input id="tDate" type="datetime-local" required></div>
+                            <div><label style="font-size:12px; font-weight:bold;">Registered Supplier *</label><select id="tSupplier" required onchange="window.handleTransactionSupplierChange()"></select></div>
+                            <div style="grid-column: 1/-1;"><label style="font-size:12px; font-weight:bold;">Supplier Info</label><input id="tSupplierInfo" readonly style="background:#f8fafc;"></div>
+                            <div style="grid-column: 1/-1;"><label style="font-size:12px; font-weight:bold;">Invoice / Waybill No.</label><input id="tInvoice" placeholder="e.g. INV-8821"></div>
+                        </div>
+
+                        <div style="margin-top:10px;">
+                            <label style="font-size:12px; font-weight:bold;">Products Bought (Auto-Refills Shop Stock):</label>
+                            <div id="transactionLines"></div>
+                            <button type="button" class="btn-dark" style="padding:6px; font-size:12px; width:auto; margin-top:5px;" onclick="window.addTransactionLine()">➕ Add Product Line</button>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                            <div><label style="font-size:12px; font-weight:bold;">Payment Status</label><select id="tStatus" onchange="window.updatePaymentFields()"><option value="paid">Fully Paid</option><option value="partial">Part Payment</option><option value="credit">On Credit (Owe)</option></select></div>
+                            <div id="methodContainer"><label style="font-size:12px; font-weight:bold;">Payment Method</label><select id="tMethod"><option>Transfer</option><option>Cash</option><option>POS</option></select></div>
+                            <div class="admin-only"><label style="font-size:12px; font-weight:bold;">Amount Paid (₦)</label><input id="tPaid" type="number" min="0" step="0.01" value="0" oninput="window.calculateTransaction()"></div>
+                            <div class="admin-only"><label style="font-size:12px; font-weight:bold;">Total Bill (₦)</label><input id="tTotal" type="number" readonly></div>
+                            <div class="admin-only" style="grid-column: 1/-1;"><label style="font-size:12px; font-weight:bold;">Remaining Debt Owed (₦)</label><input id="tBalance" type="number" readonly style="font-weight:bold; color:#c62828;"></div>
+                        </div>
+
+                        <div id="transactionSummary" class="admin-only" style="background:#e3f2fd; padding:10px; border-radius:8px; margin:10px 0; font-size:13px;">Add products to calculate totals.</div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-green" type="submit" id="btnSaveTx" style="flex:2;">💾 Save &amp; Sync Across All Devices</button>
+                            <button class="btn-dark" type="button" id="btnCancelEditTx" style="flex:1; display:none;" onclick="window.cancelEditingTransaction()">Cancel Edit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 4: HISTORY & PURCHASE LOGS -->
+            <div id="mkt-history" class="mkt-page admin-only">
+                <div class="card">
+                    <h3 style="margin-top:0;">📚 Purchase History &amp; Orders</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+                        <div style="background:#f8fafc; padding:8px; border-radius:8px; text-align:center;"><small>Total Spent</small><br><b id="hPurchases" style="font-size:14px;">₦0.00</b></div>
+                        <div style="background:#f0fdf4; padding:8px; border-radius:8px; text-align:center;"><small>Expected Profit</small><br><b id="hProfit" class="text-green" style="font-size:14px;">₦0.00</b></div>
+                        <div style="background:#fef2f2; padding:8px; border-radius:8px; text-align:center;"><small>Debts Owed</small><br><b id="hDebt" class="text-red" style="font-size:14px;">₦0.00</b></div>
+                    </div>
+                    <input id="historySearch" placeholder="🔍 Search supplier, product, receipt..." oninput="window.renderMarketHistory()">
+                    <div id="tabulatedHistoryContainer"></div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 5: SUPPLIER PAYMENTS -->
+            <div id="mkt-payments" class="mkt-page admin-only">
+                <div class="card">
+                    <h3 style="margin-top:0;">💳 Pay Supplier Debts</h3>
+                    <input id="paymentSearch" placeholder="🔍 Search debt records..." oninput="window.renderPayments()">
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Date</th><th>Supplier</th><th>Goods</th><th>Total</th><th>Paid</th><th>Balance</th><th>Action</th></tr></thead>
+                            <tbody id="paymentTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 6: REGISTERED SUPPLIERS -->
+            <div id="mkt-suppliers" class="mkt-page">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3 style="margin:0;">👥 Registered Suppliers</h3>
+                        <button class="btn-blue btn-tbl" onclick="window.openSupplierModal()">➕ New Supplier</button>
+                    </div>
+                    <input id="supplierSearch" placeholder="🔍 Search suppliers..." oninput="window.renderSuppliers()">
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Supplier</th><th>Phone</th><th>Category/Deals</th><th class="admin-only">Bank Info</th><th>Actions</th></tr></thead>
+                            <tbody id="supplierTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 7: REGISTER PRODUCT -->
+            <div id="mkt-prods" class="mkt-page">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3 style="margin:0;">🏷️ Register Product</h3>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn-dark btn-tbl" onclick="window.promptAddCategory()">📁 + Category</button>
+                            <button class="btn-blue btn-tbl" onclick="window.openProductModal()">➕ New Product</button>
+                        </div>
+                    </div>
+                    <input id="productSearch" placeholder="🔍 Search products..." oninput="window.renderMarketProducts()">
+                    <div id="supplierGroupedProductsContainer"></div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 8: PROFIT & BREAKDOWN REPORTS -->
+            <div id="mkt-reports" class="mkt-page admin-only">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <h3 style="margin:0;">📊 Reports &amp; Profit</h3>
+                        <button class="btn-blue btn-tbl" style="width:auto; margin:0;" onclick="window.exportMarketPdf()">📄 Export Purchases PDF</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                        <div style="background:#f8fafc; padding:10px; border-radius:8px;"><span>Total Purchases:</span><br><b id="rCost">₦0</b></div>
+                        <div style="background:#f8fafc; padding:10px; border-radius:8px;"><span>Total Paid:</span><br><b id="rPaid">₦0</b></div>
+                        <div style="background:#fef2f2; padding:10px; border-radius:8px;"><span>Debts Owed:</span><br><b id="rBalance" class="text-red">₦0</b></div>
+                        <div style="background:#f0fdf4; padding:10px; border-radius:8px;"><span>Est. Retail Profit:</span><br><b id="rProfit" class="text-green">₦0</b></div>
+                    </div>
+                    <h4 style="margin: 15px 0 8px 0; color: #1e3a8a;">Top Profit Products</h4>
+                    <div id="productProfitReport"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 2. Shopping List -->
-    <div id="mkt-needs" class="mkt-page">
-        <div class="card">
-            <h3 style="margin-top:0;">📋 Shopping List</h3>
-            <div id="needsList"></div>
+    <!-- MODAL 1: PURCHASE ORDER SLIP (WHATSAPP & PNG) -->
+    <div class="modal" id="orderVoucherModal"><div class="modal-content" style="max-width: 550px;">
+        <h3>Supplier Purchase Order Slip</h3>
+        <p style="font-size:11px; color:#166534; background:#f0fdf4; padding:8px; border-radius:6px; margin-bottom: 12px;">🔒 Confidential Slip: Product names and quantities only. Wholesale costs and retail profit are completely hidden.</p>
+        
+        <label style="font-size:12px; font-weight:bold;">Filter by Supplier:</label>
+        <select id="voucherSupplierFilter" onchange="window.renderOrderVoucherContent()"></select>
+        
+        <div id="printOrderVoucher" class="receipt">
+            <div style="text-align:center; border-bottom:1px dashed #ccc; padding-bottom:10px;">
+                <h2 style="margin:0 0 4px 0;">GOODS ORDER VOUCHER</h2>
+                <div style="font-size:11px; font-weight:bold; color:#0d47a1;">OFFICIAL MARKET PURCHASE ORDER</div>
+                <small id="voucherDate" style="color:#667085;"></small>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin:10px 0;">
+                <div><b>From (Buyer):</b> <span id="voucherBuyerName"></span><br><small id="voucherBuyerPhone"></small></div>
+                <div style="text-align:right;"><b>To Supplier:</b> <span id="voucherSupplierName"></span><br><small id="voucherSupplierAddress"></small></div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:30px; text-align:center;">#</th>
+                        <th>Product Name</th>
+                        <th style="text-align:center;">Size</th>
+                        <th style="text-align:center;">Category</th>
+                        <th style="text-align:center;">Order Qty</th>
+                    </tr>
+                </thead>
+                <tbody id="voucherItemsTable"></tbody>
+            </table>
         </div>
-    </div>
+        
+        <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn-whatsapp" onclick="window.sendOrderVoucherWhatsAppText()" style="flex:2;">💬 Send WhatsApp Table</button>
+            <button class="btn-blue" onclick="window.shareOrderVoucherImage()" style="flex:1;">🖼️ Send as Image</button>
+            <button class="btn-dark" onclick="closeModals()" style="flex:1;">Close</button>
+        </div>
+    </div></div>
 
-    <!-- 3. Buy from Supplier -->
-    <div id="mkt-buy" class="mkt-page">
-        <div class="card">
-            <h3 style="margin-top:0;">📦 Record Market Purchase</h3>
-            <form onsubmit="saveTransaction(event)">
-                <label>Supplier:</label><select id="tSupplier" required></select>
-                <div id="transactionLines"></div>
-                <button type="button" class="btn-dark" style="padding:6px; font-size:11px; width:auto; margin:5px 0;" onclick="addTransactionLine()">➕ Add Product</button>
+    <!-- MODAL 2: ASSIGN SUPPLIER MODAL -->
+    <div class="modal" id="markSupplierModal"><div class="modal-content">
+        <h3>Assign Supplier</h3>
+        <input type="hidden" id="popMarkProdId">
+        <p id="popMarkProdName" style="font-weight:bold; font-size:15px; color:#0d47a1; margin-top:0;"></p>
+        <label>Supplier:</label><select id="popMarkSupplierSelect"></select>
+        <label>Qty (Packs/Crates):</label><input id="popMarkQty" type="number" min="1" value="1">
+        <button class="btn-green" onclick="window.confirmMarkProductSupplier()">Confirm</button>
+        <button class="btn-red" onclick="window.cancelMarkProductSupplier()">Cancel</button>
+    </div></div>
+
+    <!-- MODAL 3: SUPPLIER REGISTRATION & EDIT -->
+    <div class="modal" id="supplierModal"><div class="modal-content">
+        <h3 id="supplierModalTitle">Register Supplier</h3>
+        <form onsubmit="window.saveSupplier(event)">
+            <input type="hidden" id="supplierId">
+            <label>Name:</label><input id="sName" required>
+            <label>Phone:</label><input id="sPhone" required>
+            <label>Address:</label><input id="sAddress">
+            <label>Deals In:</label><input id="sDeals">
+            <div class="admin-only">
+                <label>Bank Name:</label><input id="sBank">
+                <label>Account No:</label><input id="sAccountNumber">
+            </div>
+            <button class="btn-green" type="submit">Save Supplier</button>
+            <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
+        </form>
+    </div></div>
+
+    <!-- MODAL 4: PRODUCT REGISTRATION & EDIT -->
+    <div class="modal" id="marketProductModal"><div class="modal-content">
+        <h3 id="mktProdModalTitle">Register Product</h3>
+        <form onsubmit="window.saveMarketProduct(event)">
+            <input type="hidden" id="mktProductId">
+            <label>Product Name:</label><input id="mpName" required>
+            <label>Supplier:</label><select id="mpSupplier" required></select>
+            <label>Category:</label><select id="mpCategory" onchange="window.handleProductCategoryChange(this)" required></select>
+            <label>Size:</label><select id="mpUnit"><option value="Big">Big</option><option value="Small">Small</option></select>
+            <div class="admin-only">
+                <label>Wholesale Cost (₦):</label><input id="mpCost" type="number" min="0" step="0.01" value="0" required>
+            </div>
+            <label>Items in Pack / Crate:</label><input id="mpPackQty" type="number" min="1" value="1">
+            <label>Retail Selling Price (₦):</label><input id="mpSell" type="number" min="0" step="0.01" required>
+            <button class="btn-green" type="submit">Save to Market &amp; Shop</button>
+            <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
+        </form>
+    </div></div>
+
+    <!-- MODAL 5: PAY SUPPLIER DEBT -->
+    <div class="modal" id="paySupplierModal"><div class="modal-content">
+        <h3>Pay Supplier Debt</h3>
+        <div id="paySupplierInfo" style="background:#e3f2fd; padding:10px; border-radius:8px; margin-bottom:10px;"></div>
+        <input type="hidden" id="activePayTxId">
+        <label>Payment Method:</label><select id="payMethod"><option>Transfer</option><option>Cash</option><option>POS</option></select>
+        <label>Amount (₦):</label><input id="payAmount" type="number" min="0.01" step="0.01">
+        <button class="btn-green" onclick="window.submitSupplierPayment()">Record Payment</button>
+        <button class="btn-red" onclick="closeModals()">Cancel</button>
+    </div></div>
+
+    <!-- MODAL 6: EDIT GOODS BOUGHT (FINE-GRAINED LINE ADJUSTMENT) -->
+    <div id="mod-edit-goods-bought" class="modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <h3 style="margin-top:0; color:#0d47a1;">✏️ Edit Goods Bought</h3>
+            <p style="font-size:11px; color:#667085; margin-top:0;">Updates will adjust the supplier record and automatically sync remaining stock in your Shop Selling Tab.</p>
+            <form onsubmit="window.saveEditGoodsBought(event)">
+                <input type="hidden" id="egb-tx-id">
+                <input type="hidden" id="egb-item-idx">
                 
-                <label>Payment Status:</label>
-                <select id="tStatus"><option value="paid">Fully Paid</option><option value="credit">On Credit</option></select>
-                <button class="btn-green" type="submit" style="margin-top:10px;">💾 Save &amp; Auto-Refill Shop Stock</button>
+                <label style="font-size:12px; font-weight:bold;">Product Name</label>
+                <input type="text" id="egb-name" readonly style="background:#f8fafc; font-weight:bold;">
+
+                <label style="font-size:12px; font-weight:bold;">Supplier</label>
+                <select id="egb-supplier" required></select>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label style="font-size:12px; font-weight:bold;">Packs Bought</label><input type="number" id="egb-qty" min="1" step="1" required></div>
+                    <div><label style="font-size:12px; font-weight:bold;">Items per Pack</label><input type="number" id="egb-pack-qty" min="1" step="1" required></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="admin-only"><label style="font-size:12px; font-weight:bold;">Wholesale Cost/Pk (₦)</label><input id="egb-cost" type="number" min="0" step="0.01" required></div>
+                    <div><label style="font-size:12px; font-weight:bold;">Retail Sell Price (₦)</label><input id="egb-sell" type="number" min="0" step="0.01" required></div>
+                </div>
+
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                    <button class="btn-green" type="submit" style="flex:2;">💾 Update &amp; Sync Stock</button>
+                    <button class="btn-dark" type="button" onclick="document.getElementById('mod-edit-goods-bought').style.display='none'" style="flex:1;">Cancel</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- 4. History -->
-    <div id="mkt-history" class="mkt-page admin-only">
-        <div class="card"><h3>📚 Purchase Orders</h3><div id="historyList"></div></div>
-    </div>
+    <!-- UI Subpage Navigation Scripts -->
+    <script>
+        function showMktPage(pageId) {
+            document.querySelectorAll('.mkt-page').forEach(p => p.classList.remove('active-page'));
+            const pageEl = document.getElementById(pageId);
+            if(pageEl) pageEl.classList.add('active-page');
+            document.querySelectorAll('.mkt-sub-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = Array.from(document.querySelectorAll('.mkt-sub-btn')).find(b => b.getAttribute('onclick').includes(pageId));
+            if(activeBtn) activeBtn.classList.add('active');
+            
+            if(pageId === 'mkt-buy') {
+                const tDate = document.getElementById('tDate');
+                if(tDate && !tDate.value) tDate.value = new Date().toISOString().slice(0, 16);
+                if(window.handleTransactionSupplierChange) window.handleTransactionSupplierChange();
+            }
+        }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
 
-    <!-- 5. Pay Debts -->
-    <div id="mkt-payments" class="mkt-page admin-only">
-        <div class="card"><h3>💳 Supplier Debts</h3><div id="paymentList"></div></div>
-    </div>
+        window.addEventListener('DOMContentLoaded', () => {
+            const h = window.location.hash.replace('#', '');
+            if(h && document.getElementById(h)) showMktPage(h);
+        });
+    </script>
 
-    <!-- 6. Suppliers -->
-    <div id="mkt-suppliers" class="mkt-page">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0;">👥 Suppliers</h3>
-                <button class="btn-blue btn-tbl" onclick="openSupplierModal()">+ New</button>
-            </div>
-            <div id="supplierList" style="margin-top:10px;"></div>
-        </div>
-    </div>
-
-    <!-- 7. Products -->
-    <div id="mkt-prods" class="mkt-page">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0;">🏷️ Register Product</h3>
-                <button class="btn-blue btn-tbl" onclick="openProductModal()">+ Product</button>
-            </div>
-            <div id="productList" style="margin-top:10px;"></div>
-        </div>
-    </div>
-
-    <!-- Order Slip Modal -->
-    <div class="modal" id="orderVoucherModal">
-        <div class="modal-content">
-            <h3>Supplier Order Slip</h3>
-            <div id="printOrderVoucher" class="receipt">
-                <h3 style="text-align:center; margin:0 0 5px;">PURCHASE ORDER</h3>
-                <div id="voucherItems"></div>
-            </div>
-            <button class="btn-whatsapp" style="margin-top:10px;" onclick="sendWhatsAppVoucher()">💬 Send via WhatsApp</button>
-            <button class="btn-dark" style="margin-top:5px;" onclick="closeModals()">Close</button>
-        </div>
-    </div>
-
-    <div class="modal" id="supplierModal">
-        <div class="modal-content">
-            <h3>Add Supplier</h3>
-            <form onsubmit="saveSupplier(event)">
-                <input id="sName" placeholder="Name" required>
-                <input id="sPhone" placeholder="Phone" required>
-                <input id="sAddress" placeholder="Address">
-                <button class="btn-green" type="submit">Save</button>
-                <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal" id="productModal">
-        <div class="modal-content">
-            <h3>Add Product</h3>
-            <form onsubmit="saveProduct(event)">
-                <input id="mpName" placeholder="Product Name" required>
-                <select id="mpSupplier" required></select>
-                <input id="mpCost" type="number" placeholder="Wholesale Cost" required>
-                <input id="mpPackQty" type="number" placeholder="Pieces per Pack" value="12" required>
-                <input id="mpSell" type="number" placeholder="Retail Price" required>
-                <button class="btn-green" type="submit">Save</button>
-                <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
-            </form>
-        </div>
-    </div>
-
+    <!-- Complete Market Firebase Backend Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy, limit, increment, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const shopConfig = { 
             apiKey: "AIzaSyCqmaIDptWNk8v5E5Sz5XKKSAmk6FNX6Yo", 
@@ -204,179 +481,1208 @@
         const app = initializeApp(shopConfig);
         const db = getFirestore(app);
 
-        // Reads business code & staff mode from URL or storage
-        const params = new URLSearchParams(window.location.search);
-        const bizId = params.get('biz') || localStorage.getItem('starbite_active_biz_id') || 'STARBITE';
-        const isStaff = params.get('staff') === 'true' || localStorage.getItem('starbite_is_staff') === 'true';
+        let currentBizId = localStorage.getItem('starbite_active_biz_id') || '';
+        let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
 
-        if (isStaff) document.body.classList.add('is-staff');
+        if (!currentBizId) {
+            window.location.href = 'Business manager app.html';
+        }
 
-        let marketDb = { suppliers: [], products: [], transactions: [], needs: [] };
-        let markedOrderState = {};
-
-        window.showMktPage = id => {
-            document.querySelectorAll('.mkt-page').forEach(p=>p.classList.remove('active-page'));
-            document.getElementById(id).classList.add('active-page');
-            document.querySelectorAll('.mkt-sub-btn').forEach(b=>b.classList.remove('active'));
-            event.target.classList.add('active');
+        window.showDbError = (err, context = "Market Database") => {
+            console.warn(`Firestore [${context}]:`, err.message);
+            const banner = document.getElementById('app-error-banner');
+            if (!banner) return;
+            banner.style.display = 'block';
+            banner.innerText = `Sync Notice (${context}): ${err.message}`;
+            setTimeout(() => { banner.style.display = 'none'; }, 6000);
         };
 
-        window.closeModals = () => document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
-        window.openSupplierModal = () => document.getElementById('supplierModal').style.display='flex';
-        window.openProductModal = () => { window.populateSuppliers(); document.getElementById('productModal').style.display='flex'; };
+        const DEFAULT_CATEGORIES = ['Drinks','Eggs','Pastries Ingredients','Foodstuffs & Grains','Provisions & Groceries','Cooking Oil & Spices','Packaging Materials','General'];
+        window.marketDb = JSON.parse(localStorage.getItem('starbite_market_data_' + currentBizId) || 'null') || {
+            shop: { name: currentBizId, phone: '' }, suppliers: [], products: [], transactions: [], needs: [], categories: [...DEFAULT_CATEGORIES], deletedIds: []
+        };
 
-        onSnapshot(doc(db, "shops", bizId, "market", "main_store"), snap => {
-            if(snap.exists()) {
-                marketDb = snap.data();
-                window.renderOrderGoodsList();
-                window.renderSuppliers();
-                window.renderProducts();
-                window.renderHistory();
+        let markedOrderState = {};
+        let shopProducts = [];
+        let shopSales = [];
+        let currentShopMeta = null;
+
+        const money = n => '₦' + Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
+        const supplier = id => (marketDb.suppliers || []).find(x => x.id === id);
+
+        window.updateRoleUI = () => {
+            const roleBadge = document.getElementById('roleBadge');
+            if (isStaffRole) {
+                document.body.classList.add('is-staff');
+                if (roleBadge) { roleBadge.innerText = '👷 Worker Mode'; roleBadge.style.background = '#475569'; roleBadge.style.color = '#fff'; }
+            } else {
+                document.body.classList.remove('is-staff');
+                if (roleBadge) { roleBadge.innerText = '👑 Admin'; roleBadge.style.background = '#37474f'; roleBadge.style.color = '#fde047'; }
             }
-        });
+        };
+
+        window.toggleStaffRole = async () => {
+            if (!isStaffRole) {
+                if (confirm("Switch this device to Worker Mode? Financial numbers are hidden.")) {
+                    isStaffRole = true;
+                    localStorage.setItem('starbite_is_staff', 'true');
+                    window.updateRoleUI();
+                }
+            } else {
+                const inputPin = prompt("Enter Business PIN to unlock Admin mode:");
+                if (!inputPin) return;
+                const correctPin = currentShopMeta?.pin || "1234";
+                if (inputPin.trim() === String(correctPin).trim()) {
+                    isStaffRole = false;
+                    localStorage.setItem('starbite_is_staff', 'false');
+                    window.updateRoleUI();
+                    alert("👑 Admin unlocked!");
+                } else { alert("❌ Incorrect PIN."); }
+            }
+        };
+
+        function mergeEntities(localArr, cloudArr) {
+            const map = new Map();
+            const deleted = new Set(marketDb.deletedIds || []);
+            (cloudArr || []).forEach(item => { if (item && item.id && !deleted.has(item.id)) map.set(item.id, item); });
+            (localArr || []).forEach(item => {
+                if (!item || !item.id || deleted.has(item.id)) return;
+                if (!map.has(item.id)) { map.set(item.id, item); return; }
+                const cloudItem = map.get(item.id);
+                map.set(item.id, Number(item.updatedAt || 0) >= Number(cloudItem.updatedAt || 0) ? item : cloudItem);
+            });
+            return Array.from(map.values());
+        }
+
+        window.saveMarketState = async (syncCloud = true) => {
+            marketDb.updatedAt = Date.now();
+            localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
+
+            if (syncCloud && currentBizId) {
+                const badge = document.getElementById('cloudStatusBadge');
+                if (badge) { badge.className = 'top-badge badge-syncing'; badge.innerText = '☁️ Syncing...'; }
+                try {
+                    await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), JSON.parse(JSON.stringify(marketDb)), { merge: true });
+                    if (badge) { badge.className = 'top-badge badge-live'; badge.innerText = '☁️ Live'; }
+                } catch(e) {
+                    window.showDbError(e, "Market Save");
+                }
+            }
+        };
+
+        window.forceCloudSync = async () => {
+            const badge = document.getElementById('cloudStatusBadge');
+            if(badge) badge.innerText = '☁️ Fetching...';
+            try {
+                const snap = await getDoc(doc(db, "shops", currentBizId, "market", "main_store"));
+                if (snap.exists()) {
+                    const cd = snap.data();
+                    if (cd.shop) marketDb.shop = cd.shop;
+                    ['suppliers', 'products', 'transactions', 'needs'].forEach(k => {
+                        marketDb[k] = mergeEntities(marketDb[k], cd[k]);
+                    });
+                    if (Array.isArray(cd.categories)) {
+                        cd.categories.forEach(c => { if (!marketDb.categories.includes(c)) marketDb.categories.push(c); });
+                    }
+                    localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
+                    window.renderAllMarketViews();
+                    alert("Synced with cloud!");
+                }
+                if(badge) { badge.className = 'top-badge badge-live'; badge.innerText = '☁️ Live'; }
+            } catch(e) { window.showDbError(e, "Market Sync"); }
+        };
+
+        window.getProductLiveStats = (prod) => {
+            if(!prod) return { boughtUnits: 0, soldUnits: 0, availableUnits: 0, shopProd: null };
+            const pName = (prod.name || '').trim().toLowerCase();
+
+            let boughtUnits = 0;
+            (marketDb.transactions || []).forEach(t => {
+                (t.items || []).forEach(it => {
+                    if((it.productId === prod.id) || (it.name && it.name.trim().toLowerCase() === pName)) {
+                        boughtUnits += (Number(it.qty || 0) * Number(it.packQty || prod.packQty || 1));
+                    }
+                });
+            });
+
+            const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === pName);
+
+            let soldUnits = 0;
+            shopSales.forEach(s => {
+                (s.items || []).forEach(si => {
+                    if(si.name && si.name.trim().toLowerCase() === pName) {
+                        soldUnits += Number(si.qty || 0);
+                    }
+                });
+            });
+
+            let availableUnits = shopProd && typeof shopProd.stock === 'number' 
+                ? shopProd.stock 
+                : Math.max(0, boughtUnits - soldUnits);
+
+            return { boughtUnits, soldUnits, availableUnits, shopProd };
+        };
 
         window.renderOrderGoodsList = () => {
             const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
-            const tbody = document.getElementById('orderGoodsTableBody'); if(!tbody) return;
-            tbody.innerHTML = (marketDb.products || []).filter(p=>p.name.toLowerCase().includes(q)).map(p => {
-                const chk = markedOrderState[p.id];
-                return `<tr>
-                    <td><input type="checkbox" ${chk?'checked':''} onchange="window.toggleMark('${p.id}', this.checked)"></td>
-                    <td><b>${p.name}</b></td>
-                    <td><span class="badge stock-badge-green">${p.stock || 0} pcs</span></td>
-                    <td class="admin-only">₦${p.cost || 0}</td>
-                    <td>₦${p.sell || 0}</td>
-                    <td>${(marketDb.suppliers.find(s=>s.id===p.supplierId)||{}).name || 'Supplier'}</td>
-                    <td>${chk ? `<input type="number" min="1" value="${chk.qty}" style="padding:2px; margin:0;" oninput="window.changeQty('${p.id}', this.value)">` : '—'}</td>
+            const cat = document.getElementById('orderCategoryFilter')?.value;
+            const tbody = document.getElementById('orderGoodsTableBody');
+            if(!tbody) return;
+
+            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
+            
+            tbody.innerHTML = list.length ? list.map(p => {
+                const st = markedOrderState[p.id], chk = Boolean(st && st.checked), sup = chk ? supplier(st.supplierId) : null;
+                const stats = window.getProductLiveStats(p);
+                let availBadge = stats.availableUnits <= 0 ? 'stock-badge-red' : (stats.availableUnits < 5 ? 'stock-badge-orange' : 'stock-badge-green');
+
+                return `<tr style="${chk ? 'background:#f4f3ff;' : ''}">
+                    <td style="text-align:center"><input type="checkbox" ${chk?'checked':''} onchange="window.handleOrderCheckClick('${p.id}', this.checked)"></td>
+                    <td><b>${esc(p.name)}</b></td>
+                    <td style="text-align:center"><span class="badge ${p.unit==='Big'?'size-big':'size-small'}">${p.unit}</span></td>
+                    <td style="text-align:center; font-weight:700;">${stats.boughtUnits} pcs</td>
+                    <td style="text-align:center; font-weight:700; color:#0284c7;">${stats.soldUnits} pcs</td>
+                    <td style="text-align:center;"><span class="badge ${availBadge}">${stats.availableUnits} pcs</span></td>
+                    <td class="admin-only"><b>${money(p.cost)}</b></td>
+                    <td>${money(p.sell)}</td>
+                    <td>${chk ? `<span class="clickable" onclick="window.handleOrderCheckClick('${p.id}', true)">${esc(sup?.name||'Select Supplier')} ✏️</span>` : '<small style="color:#888;">Check to order</small>'}</td>
+                    <td style="text-align:center">${chk ? `<input type="number" min="1" value="${st.qty||1}" style="width:65px; margin:0; padding:4px;" oninput="window.changeOrderQty('${p.id}', this.value)">` : '—'}</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
+                        <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">🗑️</button>
+                    </td>
                 </tr>`;
-            }).join('');
+            }).join('') : '<tr><td colspan="11" style="text-align:center; padding:15px; color:#999;">No products registered in catalog.</td></tr>';
+
+            window.updateLiveOrderBar();
         };
 
-        window.toggleMark = (id, chk) => {
-            if(chk) markedOrderState[id] = { qty: 1 };
-            else delete markedOrderState[id];
-            window.updateBar();
+        window.handleOrderCheckClick = (id, chk) => {
+            if(chk) {
+                if(!marketDb.suppliers || !marketDb.suppliers.length) {
+                    alert("Please register at least one supplier first!");
+                    window.renderOrderGoodsList();
+                    return;
+                }
+                const p = (marketDb.products || []).find(x => x.id === id);
+                if(!p) return;
+
+                document.getElementById('popMarkProdId').value = id;
+                document.getElementById('popMarkProdName').textContent = p.name;
+                
+                const sel = document.getElementById('popMarkSupplierSelect');
+                sel.innerHTML = (marketDb.suppliers || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+                sel.value = (markedOrderState[id] && markedOrderState[id].supplierId) || p.supplierId || marketDb.suppliers[0]?.id;
+                
+                document.getElementById('popMarkQty').value = (markedOrderState[id] && markedOrderState[id].qty) || 1;
+                document.getElementById('markSupplierModal').style.display = 'flex';
+            } else {
+                delete markedOrderState[id];
+                window.renderOrderGoodsList();
+            }
+        };
+
+        window.confirmMarkProductSupplier = () => {
+            const id = document.getElementById('popMarkProdId').value;
+            const supId = document.getElementById('popMarkSupplierSelect').value;
+            const qVal = parseInt(document.getElementById('popMarkQty').value, 10);
+            markedOrderState[id] = { checked: true, supplierId: supId, qty: isNaN(qVal) || qVal < 1 ? 1 : qVal };
+            closeModals();
             window.renderOrderGoodsList();
         };
 
-        window.changeQty = (id, val) => {
-            if(markedOrderState[id]) markedOrderState[id].qty = parseInt(val) || 1;
-            window.updateBar();
+        window.cancelMarkProductSupplier = () => { 
+            closeModals(); 
+            window.renderOrderGoodsList(); 
         };
 
-        window.updateBar = () => {
-            const count = Object.keys(markedOrderState).length;
-            document.getElementById('liveMarkedCount').innerText = `${count} items marked`;
+        window.changeOrderQty = (id, val) => {
+            const parsed = parseInt(val, 10);
+            if(markedOrderState[id]) markedOrderState[id].qty = isNaN(parsed) || parsed < 1 ? 1 : parsed;
+            window.updateLiveOrderBar();
         };
 
-        window.openOrderVoucherModal = () => {
-            const list = Object.keys(markedOrderState).map(id => {
-                const p = marketDb.products.find(x=>x.id===id);
-                return `<div>${p.name} - <b>${markedOrderState[id].qty} packs</b></div>`;
-            }).join('');
-            document.getElementById('voucherItems').innerHTML = list || 'No items marked';
-            document.getElementById('orderVoucherModal').style.display='flex';
-        };
+        window.resetOrderSelection = () => { markedOrderState = {}; window.renderOrderGoodsList(); };
 
-        window.sendWhatsAppVoucher = () => {
-            let msg = `*PURCHASE ORDER*\n`;
-            Object.keys(markedOrderState).forEach((id, i) => {
-                const p = marketDb.products.find(x=>x.id===id);
-                msg += `${i+1}. ${p.name} - ${markedOrderState[id].qty} packs\n`;
+        window.updateLiveOrderBar = function() {
+            let items = 0, units = 0, cost = 0, profit = 0;
+            Object.keys(markedOrderState).forEach(id => {
+                const st = markedOrderState[id];
+                if(st && st.checked) {
+                    const p = (marketDb.products || []).find(x => x.id === id);
+                    if(p) {
+                        const qty = Math.max(1, parseInt(st.qty, 10) || 1);
+                        items++; units += qty; cost += (Number(p.cost || 0) * qty);
+                        profit += (((Number(p.sell || 0) * Math.max(1, Number(p.packQty) || 1)) - Number(p.cost || 0)) * qty);
+                    }
+                }
             });
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+            document.getElementById('liveMarkedCount').textContent = `${items} items (${units} pks)`;
+            document.getElementById('liveTotalCost').textContent = money(cost);
+            document.getElementById('liveTotalProfit').textContent = money(profit);
         };
 
-        window.saveSupplier = async e => {
-            e.preventDefault();
-            marketDb.suppliers = marketDb.suppliers || [];
-            marketDb.suppliers.push({
-                id: 'sup_' + Date.now(),
-                name: document.getElementById('sName').value,
-                phone: document.getElementById('sPhone').value,
-                address: document.getElementById('sAddress').value
+        window.saveMarkedToMarketList = () => {
+            const ids = Object.keys(markedOrderState).filter(id => markedOrderState[id]?.checked);
+            if(!ids.length) return alert("Please check at least one product.");
+            marketDb.needs = marketDb.needs || [];
+            ids.forEach(id => {
+                marketDb.needs.push({
+                    id: 'need_' + Date.now() + Math.random().toString(36).slice(2,5),
+                    productId: id, supplierId: markedOrderState[id].supplierId, qty: markedOrderState[id].qty,
+                    status: 'pending', updatedAt: Date.now(), date: new Date().toISOString()
+                });
             });
-            await setDoc(doc(db, "shops", bizId, "market", "main_store"), marketDb, { merge: true });
-            closeModals();
-            alert("Supplier saved!");
+            window.resetOrderSelection();
+            window.saveMarketState(true);
+            alert("✅ Added to Shopping List!");
+            showMktPage('mkt-needs');
+            window.renderNeeds();
         };
 
-        window.saveProduct = async e => {
-            e.preventDefault();
-            marketDb.products = marketDb.products || [];
-            const newProd = {
-                id: 'prod_' + Date.now(),
-                name: document.getElementById('mpName').value,
-                supplierId: document.getElementById('mpSupplier').value,
-                cost: parseFloat(document.getElementById('mpCost').value) || 0,
-                packQty: parseInt(document.getElementById('mpPackQty').value) || 12,
-                sell: parseFloat(document.getElementById('mpSell').value) || 0
-            };
-            marketDb.products.push(newProd);
-            await setDoc(doc(db, "shops", bizId, "market", "main_store"), marketDb, { merge: true });
-            closeModals();
-            alert("Product registered in market!");
-        };
-
-        window.populateSuppliers = () => {
-            const sel = document.getElementById('mpSupplier');
-            sel.innerHTML = (marketDb.suppliers || []).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-            document.getElementById('tSupplier').innerHTML = sel.innerHTML;
-        };
-
-        window.addTransactionLine = () => {
-            const div = document.createElement('div');
-            div.innerHTML = `<select class="tx-p" style="margin-bottom:4px;">${(marketDb.products||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select>
-            <input class="tx-q" type="number" min="1" placeholder="Packs" value="1">`;
-            document.getElementById('transactionLines').appendChild(div);
-        };
-
-        // Purchase auto-refills shop inventory!
-        window.saveTransaction = async e => {
-            e.preventDefault();
-            const supId = document.getElementById('tSupplier').value;
-            const items = [];
+        window.convertMarkedToPurchase = () => {
+            const ids = Object.keys(markedOrderState).filter(id => markedOrderState[id]?.checked);
+            if(!ids.length) return alert("Please check at least one product.");
             
-            document.querySelectorAll('#transactionLines div').forEach(r => {
-                const pid = r.querySelector('.tx-p').value;
-                const qty = parseInt(r.querySelector('.tx-q').value) || 1;
-                const p = marketDb.products.find(x=>x.id===pid);
-                items.push({ productId: pid, name: p.name, qty, packQty: p.packQty || 12, cost: p.cost, sell: p.sell });
+            const firstSup = markedOrderState[ids[0]].supplierId;
+            showMktPage('mkt-buy');
+            document.getElementById('tSupplier').value = firstSup;
+            window.handleTransactionSupplierChange();
+            document.getElementById('transactionLines').innerHTML = '';
+            
+            ids.filter(id => markedOrderState[id].supplierId === firstSup).forEach(id => {
+                window.addTransactionLine(id, markedOrderState[id].qty);
+                delete markedOrderState[id];
+            });
+            window.calculateTransaction();
+            window.renderOrderGoodsList();
+        };
+
+        window.handleTransactionSupplierChange = () => {
+            const sId = document.getElementById('tSupplier')?.value;
+            const s = supplier(sId);
+            const infoInput = document.getElementById('tSupplierInfo');
+            if(infoInput) {
+                if(s) {
+                    const parts = [];
+                    if(s.phone) parts.push(`📞 ${s.phone}`);
+                    if(s.address) parts.push(`📍 ${s.address}`);
+                    if(s.deals) parts.push(`🏷️ ${s.deals}`);
+                    if(!isStaffRole && (s.bank || s.accountNumber)) parts.push(`🏦 ${s.bank || ''} ${s.accountNumber || ''}`.trim());
+                    infoInput.value = parts.join(' | ') || 'Registered Supplier';
+                } else { infoInput.value = ''; }
+            }
+        };
+
+        window.addTransactionLine = (selectedId = '', qty = 1) => {
+            const wrap = document.getElementById('transactionLines');
+            const div = document.createElement('div');
+            div.className = 'product-line';
+            div.innerHTML = `<div class="product-line-grid">
+                <div class="wide"><label style="font-size:11px;">Product</label><select class="tx-product" onchange="window.calculateTransaction()" required></select></div>
+                <div><label style="font-size:11px;">Packs/Qty</label><input class="tx-qty" type="number" min="1" value="${qty}" oninput="window.calculateTransaction()" required></div>
+                <div class="admin-only"><label style="font-size:11px;">Cost/Pk (₦)</label><input class="tx-cost" type="number" readonly style="background:#f8fafc;"></div>
+                <div class="admin-only"><label style="font-size:11px;">Total (₦)</label><input class="tx-line-total" type="number" readonly style="background:#f8fafc; font-weight:bold;"></div>
+                <button type="button" class="btn-red btn-tbl" onclick="this.closest('.product-line').remove(); window.calculateTransaction();">✕</button>
+            </div>`;
+            wrap.appendChild(div);
+            
+            const sel = div.querySelector('.tx-product');
+            sel.innerHTML = '<option value="">-- Choose Product --</option>' + (marketDb.products || []).map(p => `<option value="${p.id}">${esc(p.name)} [${p.unit}] ${!isStaffRole ? '- ' + money(p.cost) : ''}</option>`).join('');
+            if(selectedId) sel.value = selectedId;
+            window.calculateTransaction();
+        };
+
+        window.calculateTransaction = () => {
+            let total = 0, profit = 0;
+            document.querySelectorAll('.product-line').forEach(r => {
+                const pid = r.querySelector('.tx-product').value;
+                const p = (marketDb.products || []).find(x => x.id === pid);
+                const q = Math.max(1, Number(r.querySelector('.tx-qty').value || 1));
+                if(p) {
+                    const pCost = Number(p.cost) || 0;
+                    const pSell = Number(p.sell) || 0;
+                    const pPackQty = Math.max(1, Number(p.packQty) || 1);
+                    const line = pCost * q;
+                    total += line;
+                    profit += (((pSell * pPackQty) - pCost) * q);
+                    const costEl = r.querySelector('.tx-cost');
+                    const lineEl = r.querySelector('.tx-line-total');
+                    if(costEl) costEl.value = pCost;
+                    if(lineEl) lineEl.value = line.toFixed(2);
+                }
             });
 
-            const tx = { id: 'tx_' + Date.now(), date: new Date().toISOString(), supplierId: supId, items };
-            marketDb.transactions = marketDb.transactions || [];
-            marketDb.transactions.push(tx);
-            await setDoc(doc(db, "shops", bizId, "market", "main_store"), marketDb, { merge: true });
+            document.getElementById('tTotal').value = total.toFixed(2);
+            const st = document.getElementById('tStatus').value;
+            if(st === 'paid') document.getElementById('tPaid').value = total.toFixed(2);
+            else if(st === 'credit') document.getElementById('tPaid').value = '0.00';
 
-            // Automatically increase stock in the shop
-            for(const it of items) {
-                const totalPieces = it.qty * it.packQty;
-                const docId = it.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                await setDoc(doc(db, "shops", bizId, "products", docId), {
-                    name: it.name,
-                    price: it.sell,
-                    cost: it.cost,
-                    stock: increment(totalPieces),
-                    itemsPerPack: it.packQty
-                }, { merge: true });
+            const paid = Number(document.getElementById('tPaid').value || 0);
+            const bal = Math.max(0, total - paid);
+            document.getElementById('tBalance').value = bal.toFixed(2);
+            document.getElementById('transactionSummary').innerHTML = `Bill: <b>${money(total)}</b> | Paid: <b>${money(paid)}</b> | Debt: <b class="text-red">${money(bal)}</b> | Est. Profit: <b class="text-green">${money(profit)}</b>`;
+        };
+
+        window.updatePaymentFields = () => {
+            const st = document.getElementById('tStatus').value;
+            const total = Number(document.getElementById('tTotal').value || 0);
+            if(st === 'paid') document.getElementById('tPaid').value = total.toFixed(2);
+            else if(st === 'credit') document.getElementById('tPaid').value = '0.00';
+            window.calculateTransaction();
+        };
+
+        window.saveTransaction = async (e) => {
+            e.preventDefault();
+            const sId = document.getElementById('tSupplier').value;
+            if(!sId) return alert("Select registered supplier");
+
+            const items = [];
+            let total = 0, profit = 0;
+            document.querySelectorAll('.product-line').forEach(r => {
+                const pid = r.querySelector('.tx-product').value;
+                const p = (marketDb.products || []).find(x => x.id === pid);
+                const q = Math.max(1, Number(r.querySelector('.tx-qty').value || 1));
+                if(p) {
+                    const pCost = Number(p.cost) || 0;
+                    const pSell = Number(p.sell) || 0;
+                    const pPackQty = Math.max(1, Number(p.packQty) || 1);
+                    const line = pCost * q;
+                    items.push({ productId: p.id, name: p.name, unit: p.unit, category: p.category || 'General', qty: q, cost: pCost, packQty: pPackQty, sell: pSell, lineTotal: line });
+                    total += line;
+                    profit += (((pSell * pPackQty) - pCost) * q);
+                }
+            });
+
+            if(!items.length) return alert("Add at least one product bought from supplier.");
+
+            const editingId = document.getElementById('editingTxId').value;
+            const paid = Number(document.getElementById('tPaid').value || 0);
+
+            if (editingId) {
+                // Revert previous stock additions first
+                const oldTx = (marketDb.transactions || []).find(x => x.id === editingId);
+                if (oldTx) {
+                    for(const oldIt of (oldTx.items || [])) {
+                        const oldPieces = (Number(oldIt.qty) || 1) * (Number(oldIt.packQty) || 1);
+                        const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === (oldIt.name || '').trim().toLowerCase());
+                        if (matchShop) {
+                            await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
+                                stock: increment(-oldPieces),
+                                initStock: increment(-oldPieces)
+                            });
+                        }
+                    }
+                }
+                const txIdx = marketDb.transactions.findIndex(x => x.id === editingId);
+                if (txIdx !== -1) {
+                    marketDb.transactions[txIdx] = {
+                        ...marketDb.transactions[txIdx],
+                        date: document.getElementById('tDate').value || new Date().toISOString(),
+                        supplierId: sId,
+                        invoiceNo: document.getElementById('tInvoice').value.trim(),
+                        items, total, paid, balance: total - paid,
+                        status: document.getElementById('tStatus').value,
+                        method: document.getElementById('tMethod').value,
+                        profit, updatedAt: Date.now()
+                    };
+                }
+            } else {
+                const txData = {
+                    id: 'tx_' + Date.now(),
+                    date: document.getElementById('tDate').value || new Date().toISOString(),
+                    supplierId: sId,
+                    invoiceNo: document.getElementById('tInvoice').value.trim(),
+                    items, total, paid, balance: total - paid,
+                    status: document.getElementById('tStatus').value,
+                    method: document.getElementById('tMethod').value,
+                    profit, updatedAt: Date.now()
+                };
+                marketDb.transactions = marketDb.transactions || [];
+                marketDb.transactions.push(txData);
             }
 
-            alert("✅ Purchase saved! Shop stock has been automatically increased.");
+            await window.saveMarketState(true);
+
+            // Refill shop stock in Firestore
+            for(const it of items) {
+                const totalPieces = it.qty * (it.packQty || 1);
+                const targetName = it.name.trim().toLowerCase();
+                const existingShopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
+
+                try {
+                    if(existingShopProd) {
+                        await updateDoc(doc(db, "shops", currentBizId, "products", existingShopProd.id), {
+                            stock: increment(totalPieces),
+                            initStock: increment(totalPieces),
+                            price: it.sell, cost: it.cost,
+                            category: it.category || existingShopProd.category || 'General'
+                        });
+                    } else {
+                        const docId = targetName.replace(/[^a-z0-9]/g, '_');
+                        await setDoc(doc(db, "shops", currentBizId, "products", docId), {
+                            name: it.name, category: it.category || 'General', price: it.sell, cost: it.cost,
+                            stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 12, barcode: '', expiryDate: ''
+                        }, { merge: true });
+                    }
+                } catch(err) { window.showDbError(err, "Inventory Refill"); }
+            }
+
+            alert(`✅ Purchase Saved & Synced! Shop inventory adjusted.`);
+            window.cancelEditingTransaction();
+            window.renderAllMarketViews();
+            showMktPage('mkt-history');
+        };
+
+        window.cancelEditingTransaction = () => {
+            document.getElementById('editingTxId').value = '';
+            document.getElementById('txFormTitle').innerText = '📦 Record Market Purchase';
+            document.getElementById('btnSaveTx').innerText = '💾 Save & Sync Across All Devices';
+            document.getElementById('btnCancelEditTx').style.display = 'none';
+            document.getElementById('transactionForm').reset();
             document.getElementById('transactionLines').innerHTML = '';
         };
 
+        window.editTransaction = (txId) => {
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            if (!t) return;
+            showMktPage('mkt-buy');
+            document.getElementById('editingTxId').value = t.id;
+            document.getElementById('txFormTitle').innerText = `✏️ Edit Purchase (${t.invoiceNo || 'Order'})`;
+            document.getElementById('btnSaveTx').innerText = '💾 Update Purchase & Recalculate Stock';
+            document.getElementById('btnCancelEditTx').style.display = 'block';
+
+            document.getElementById('tDate').value = t.date ? t.date.slice(0, 16) : new Date().toISOString().slice(0, 16);
+            document.getElementById('tSupplier').value = t.supplierId;
+            window.handleTransactionSupplierChange();
+            document.getElementById('tInvoice').value = t.invoiceNo || '';
+            document.getElementById('tStatus').value = t.status || 'paid';
+            document.getElementById('tMethod').value = t.method || 'Transfer';
+
+            const wrap = document.getElementById('transactionLines');
+            wrap.innerHTML = '';
+            (t.items || []).forEach(it => {
+                window.addTransactionLine(it.productId, it.qty);
+            });
+
+            document.getElementById('tPaid').value = t.paid || 0;
+            window.calculateTransaction();
+        };
+
+        window.deleteTransaction = async (txId) => {
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            if (!t) return;
+
+            if (!confirm(`Delete purchase from ${supplier(t.supplierId)?.name || 'Supplier'}?\nThis will deduct the refilled quantities from Shop Selling Stock!`)) return;
+
+            try {
+                for(const it of (t.items || [])) {
+                    const totalPieces = (Number(it.qty) || 1) * (Number(it.packQty) || 1);
+                    const targetName = (it.name || '').trim().toLowerCase();
+                    const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
+                    if (shopProd) {
+                        await updateDoc(doc(db, "shops", currentBizId, "products", shopProd.id), {
+                            stock: Math.max(0, (shopProd.stock || 0) - totalPieces),
+                            initStock: Math.max(0, (shopProd.initStock || shopProd.stock || 0) - totalPieces)
+                        });
+                    }
+                }
+
+                marketDb.transactions = (marketDb.transactions || []).filter(x => x.id !== txId);
+                marketDb.deletedIds = marketDb.deletedIds || [];
+                marketDb.deletedIds.push(txId);
+
+                await window.saveMarketState(true);
+                window.renderAllMarketViews();
+                alert("Purchase deleted and stock safely reduced in Shop.");
+            } catch(e) { window.showDbError(e, "Delete Purchase"); }
+        };
+
+        /* Fine-grained Edit/Delete for Items inside Purchases */
+        window.openEditGoodsBought = (txId, itemIdx) => {
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            if (!t || !t.items || !t.items[itemIdx]) return;
+            const it = t.items[itemIdx];
+
+            document.getElementById('egb-tx-id').value = txId;
+            document.getElementById('egb-item-idx').value = itemIdx;
+            document.getElementById('egb-name').value = it.name;
+            document.getElementById('egb-qty').value = it.qty || 1;
+            document.getElementById('egb-pack-qty').value = it.packQty || 1;
+            document.getElementById('egb-cost').value = it.cost || 0;
+            document.getElementById('egb-sell').value = it.sell || 0;
+
+            const supSel = document.getElementById('egb-supplier');
+            if (supSel) {
+                supSel.innerHTML = (marketDb.suppliers || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+                supSel.value = t.supplierId || (marketDb.suppliers[0] ? marketDb.suppliers[0].id : '');
+            }
+
+            document.getElementById('mod-edit-goods-bought').style.display = 'flex';
+        };
+
+        window.saveEditGoodsBought = async (e) => {
+            e.preventDefault();
+            const txId = document.getElementById('egb-tx-id').value;
+            const itemIdx = parseInt(document.getElementById('egb-item-idx').value);
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            if (!t || !t.items || !t.items[itemIdx]) return;
+
+            const it = t.items[itemIdx];
+            const oldPacks = Number(it.qty || 1);
+            const oldPackQty = Number(it.packQty || 1);
+            const oldPieces = oldPacks * oldPackQty;
+
+            const newPacks = Math.max(1, parseInt(document.getElementById('egb-qty').value) || 1);
+            const newPackQty = Math.max(1, parseInt(document.getElementById('egb-pack-qty').value) || 1);
+            const newCost = Math.max(0, parseFloat(document.getElementById('egb-cost').value) || 0);
+            const newSell = Math.max(0, parseFloat(document.getElementById('egb-sell').value) || 0);
+
+            const newPieces = newPacks * newPackQty;
+            const newLineTotal = newPacks * newCost;
+            const diffPieces = newPieces - oldPieces;
+
+            it.qty = newPacks;
+            it.packQty = newPackQty;
+            it.cost = newCost;
+            it.sell = newSell;
+            it.lineTotal = newLineTotal;
+            
+            const supVal = document.getElementById('egb-supplier').value;
+            if (supVal) t.supplierId = supVal;
+
+            t.total = (t.items || []).reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+            t.profit = (t.items || []).reduce((sum, item) => sum + (((item.sell * (item.packQty || 1)) - item.cost) * item.qty), 0);
+            t.balance = Math.max(0, t.total - (t.paid || 0));
+            t.updatedAt = Date.now();
+
+            const targetName = (it.name || '').trim().toLowerCase();
+            const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
+            if (shopProd) {
+                const newStock = Math.max(0, (shopProd.stock || 0) + diffPieces);
+                const newInit = Math.max(0, (shopProd.initStock || shopProd.stock || 0) + diffPieces);
+                await updateDoc(doc(db, "shops", currentBizId, "products", shopProd.id), {
+                    stock: newStock, initStock: newInit, price: newSell, cost: newCost
+                });
+            }
+
+            await window.saveMarketState(true);
+            document.getElementById('mod-edit-goods-bought').style.display = 'none';
+            window.renderAllMarketViews();
+            alert(`✅ Item updated and shop selling stock synced!`);
+        };
+
+        window.deleteGoodsBoughtItem = async (txId, itemIdx) => {
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            if (!t || !t.items || !t.items[itemIdx]) return;
+            const it = t.items[itemIdx];
+            const totalPieces = Number(it.qty || 1) * Number(it.packQty || 1);
+            
+            if (!confirm(`Delete purchase of "${it.name}"? This will deduct ${totalPieces} pcs from shop selling stock.`)) return;
+
+            try {
+                const targetName = (it.name || '').trim().toLowerCase();
+                const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
+                if (shopProd) {
+                    await updateDoc(doc(db, "shops", currentBizId, "products", shopProd.id), {
+                        stock: Math.max(0, (shopProd.stock || 0) - totalPieces),
+                        initStock: Math.max(0, (shopProd.initStock || shopProd.stock || 0) - totalPieces)
+                    });
+                }
+
+                t.items.splice(itemIdx, 1);
+                if (t.items.length === 0) {
+                    marketDb.transactions = (marketDb.transactions || []).filter(x => x.id !== txId);
+                    marketDb.deletedIds = marketDb.deletedIds || [];
+                    marketDb.deletedIds.push(txId);
+                } else {
+                    t.total = (t.items || []).reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+                    t.profit = (t.items || []).reduce((sum, item) => sum + (((item.sell * (item.packQty || 1)) - item.cost) * item.qty), 0);
+                    t.balance = Math.max(0, t.total - (t.paid || 0));
+                    t.updatedAt = Date.now();
+                }
+
+                await window.saveMarketState(true);
+                window.renderAllMarketViews();
+            } catch(err) {
+                alert("Error deleting item: " + err.message);
+            }
+        };
+
+        window.renderNeeds = () => {
+            const q = (document.getElementById('needSearch')?.value || '').toLowerCase();
+            const supFilter = document.getElementById('needSupplierFilter')?.value;
+            const list = (marketDb.needs || []).filter(n => {
+                if (n.status !== 'pending') return false;
+                const p = (marketDb.products || []).find(x => x.id === n.productId);
+                const s = supplier(n.supplierId);
+                const matchQ = ((p?.name || '') + ' ' + (s?.name || '')).toLowerCase().includes(q);
+                const matchSup = !supFilter || n.supplierId === supFilter;
+                return matchQ && matchSup;
+            });
+
+            const div = document.getElementById('needsList');
+            if(!div) return;
+            div.innerHTML = list.length ? list.map(n => {
+                const p = (marketDb.products || []).find(x => x.id === n.productId);
+                const s = supplier(n.supplierId);
+                return `<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                    <div><b>${esc(p?.name)}</b> <span class="badge size-small">${p?.unit}</span><br><small style="color:#777;">Supplier: ${esc(s?.name)} | Qty: <b>${n.qty} pks</b></small></div>
+                    <div><button class="btn-green btn-tbl" onclick="window.buyNeedItem('${n.id}')">Buy</button> <button class="btn-red btn-tbl" onclick="window.deleteNeedItem('${n.id}')">✕</button></div>
+                </div>`;
+            }).join('') : '<p style="text-align:center; color:#999; padding:15px;">Shopping list is clear.</p>';
+        };
+
+        window.buyNeedItem = (needId) => {
+            const n = (marketDb.needs || []).find(x => x.id === needId);
+            if(!n) return;
+            showMktPage('mkt-buy');
+            document.getElementById('tSupplier').value = n.supplierId;
+            window.handleTransactionSupplierChange();
+            document.getElementById('transactionLines').innerHTML = '';
+            window.addTransactionLine(n.productId, n.qty);
+            n.status = 'fulfilled';
+            n.updatedAt = Date.now();
+            window.saveMarketState(true);
+        };
+
+        window.deleteNeedItem = (needId) => {
+            marketDb.needs = (marketDb.needs || []).filter(x => x.id !== needId);
+            marketDb.deletedIds = marketDb.deletedIds || [];
+            marketDb.deletedIds.push(needId);
+            window.saveMarketState(true);
+            window.renderNeeds();
+        };
+
+        window.renderMarketHistory = () => {
+            const q = (document.getElementById('historySearch')?.value || '').toLowerCase();
+            const cont = document.getElementById('tabulatedHistoryContainer');
+            if(!cont) return;
+
+            const filteredTx = (marketDb.transactions || []).filter(t => {
+                const s = supplier(t.supplierId);
+                const itemNames = (t.items || []).map(i => i.name).join(' ');
+                return ((s?.name || '') + ' ' + (t.invoiceNo || '') + ' ' + itemNames).toLowerCase().includes(q);
+            });
+
+            cont.innerHTML = filteredTx.slice().reverse().map(t => {
+                const s = supplier(t.supplierId);
+                let itemsListHtml = (t.items || []).map((it, idx) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px dashed #eee; font-size:12px;">
+                        <span>• <b>${esc(it.name)}</b>: ${it.qty} pks (${it.qty * (it.packQty||1)} pcs)</span>
+                        <div style="display:flex; gap:3px;">
+                            <button class="btn-orange btn-mini admin-only" onclick="window.openEditGoodsBought('${t.id}', ${idx})">✏️ Edit</button>
+                            <button class="btn-red btn-mini admin-only" onclick="window.deleteGoodsBoughtItem('${t.id}', ${idx})">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                return `<div class="card" style="margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                        <b>📅 ${new Date(t.date).toLocaleDateString()} - 🏢 ${esc(s?.name)}</b>
+                        <span class="badge ${t.balance>0?'bg-over':'bg-full'}">${t.balance>0?'Debt: ₦'+Number(t.balance).toLocaleString():'Paid'}</span>
+                    </div>
+                    <div style="margin:8px 0; background:#f8fafc; padding:8px; border-radius:6px;">${itemsListHtml}</div>
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <div>
+                            <span>Total: ${money(t.total)}</span> • 
+                            <span class="text-green">Profit: +${money(t.profit)}</span>
+                        </div>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn-orange btn-mini" onclick="window.editTransaction('${t.id}')">✏️ Edit Order</button>
+                            <button class="btn-red btn-mini" onclick="window.deleteTransaction('${t.id}')">🗑️ Delete Order</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') || '<p style="text-align:center; color:#999;">No purchases found.</p>';
+            
+            document.getElementById('hPurchases').innerText = money((marketDb.transactions || []).reduce((a,t)=>a+(t.total||0),0));
+            document.getElementById('hProfit').innerText = money((marketDb.transactions || []).reduce((a,t)=>a+(t.profit||0),0));
+            document.getElementById('hDebt').innerText = money((marketDb.transactions || []).reduce((a,t)=>a+(t.balance||0),0));
+        };
+
+        window.renderPayments = () => {
+            const q = (document.getElementById('paymentSearch')?.value || '').toLowerCase();
+            const tbody = document.getElementById('paymentTable');
+            if(!tbody) return;
+
+            const debts = (marketDb.transactions || []).filter(t => {
+                if (Number(t.balance || 0) <= 0) return false;
+                const s = supplier(t.supplierId);
+                return ((s?.name || '') + ' ' + (t.invoiceNo || '')).toLowerCase().includes(q);
+            });
+
+            tbody.innerHTML = debts.length ? debts.map(t => {
+                const s = supplier(t.supplierId);
+                return `<tr>
+                    <td>${new Date(t.date).toLocaleDateString()}</td>
+                    <td><b>${esc(s?.name)}</b></td>
+                    <td>${(t.items || []).map(i=>i.name).join(', ')}</td>
+                    <td>${money(t.total)}</td>
+                    <td>${money(t.paid)}</td>
+                    <td class="text-red"><b>${money(t.balance)}</b></td>
+                    <td><button class="btn-green btn-tbl" onclick="window.openPaySupplierModal('${t.id}')">Pay</button></td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="7" style="text-align:center; color:#999; padding:15px;">All supplier debts settled!</td></tr>';
+        };
+
+        window.openPaySupplierModal = (txId) => {
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            if(!t) return;
+            document.getElementById('activePayTxId').value = txId;
+            document.getElementById('paySupplierInfo').innerHTML = `Pay Debt to <b>${esc(supplier(t.supplierId)?.name)}</b><br>Remaining Balance: <b class="text-red">${money(t.balance)}</b>`;
+            document.getElementById('payAmount').value = t.balance;
+            document.getElementById('paySupplierModal').style.display = 'flex';
+        };
+
+        window.submitSupplierPayment = async () => {
+            const txId = document.getElementById('activePayTxId').value;
+            const t = (marketDb.transactions || []).find(x => x.id === txId);
+            const amt = parseFloat(document.getElementById('payAmount').value);
+            if(!amt || amt <= 0 || amt > t.balance) return alert("Invalid amount");
+            t.paid = Number(t.paid || 0) + amt;
+            t.balance = Math.max(0, t.total - t.paid);
+            if(t.balance === 0) t.status = 'paid';
+            t.updatedAt = Date.now();
+            await window.saveMarketState(true);
+            closeModals();
+            alert("Payment recorded!");
+            window.renderPayments();
+            window.renderMarketHistory();
+        };
+
         window.renderSuppliers = () => {
-            document.getElementById('supplierList').innerHTML = (marketDb.suppliers || []).map(s => `<div><b>${s.name}</b> (${s.phone})</div>`).join('') || 'No suppliers yet.';
+            const q = (document.getElementById('supplierSearch')?.value || '').toLowerCase();
+            const tbody = document.getElementById('supplierTable');
+            if(!tbody) return;
+
+            const list = (marketDb.suppliers || []).filter(s => (s.name + ' ' + (s.deals || '') + ' ' + (s.phone || '')).toLowerCase().includes(q));
+
+            tbody.innerHTML = list.map(s => `<tr>
+                <td><b>${esc(s.name)}</b><br><small style="color:#777;">${esc(s.address||'')}</small></td>
+                <td>${esc(s.phone)}</td>
+                <td>${esc(s.deals||'General')}</td>
+                <td class="admin-only">${esc(s.bank||'')}<br><small>${esc(s.accountNumber||'')}</small></td>
+                <td>
+                    <button class="btn-orange btn-mini admin-only" onclick="window.editSupplier('${s.id}')">✏️</button>
+                    <button class="btn-red btn-mini admin-only" onclick="window.deleteSupplier('${s.id}')">🗑️</button>
+                </td>
+            </tr>`).join('') || '<tr><td colspan="5" style="text-align:center; color:#999; padding:15px;">No suppliers registered.</td></tr>';
         };
 
-        window.renderProducts = () => {
-            document.getElementById('productList').innerHTML = (marketDb.products || []).map(p => `<div><b>${p.name}</b> - Retail: ₦${p.sell}</div>`).join('') || 'No products yet.';
+        window.openSupplierModal = () => {
+            document.getElementById('supplierId').value = '';
+            document.getElementById('sName').value = '';
+            document.getElementById('sPhone').value = '';
+            document.getElementById('sAddress').value = '';
+            document.getElementById('sDeals').value = '';
+            document.getElementById('sBank').value = '';
+            document.getElementById('sAccountNumber').value = '';
+            document.getElementById('supplierModalTitle').innerText = 'Register Supplier';
+            document.getElementById('supplierModal').style.display = 'flex';
         };
 
-        window.renderHistory = () => {
-            document.getElementById('historyList').innerHTML = (marketDb.transactions || []).map(t => `<div><b>${new Date(t.date).toLocaleDateString()}</b> - ${t.items.length} items</div>`).join('') || 'No history yet.';
+        window.editSupplier = (id) => {
+            const s = (marketDb.suppliers || []).find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('supplierId').value = s.id;
+            document.getElementById('sName').value = s.name || '';
+            document.getElementById('sPhone').value = s.phone || '';
+            document.getElementById('sAddress').value = s.address || '';
+            document.getElementById('sDeals').value = s.deals || '';
+            document.getElementById('sBank').value = s.bank || '';
+            document.getElementById('sAccountNumber').value = s.accountNumber || '';
+            document.getElementById('supplierModalTitle').innerText = '✏️ Edit Supplier';
+            document.getElementById('supplierModal').style.display = 'flex';
         };
+
+        window.saveSupplier = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('supplierId').value;
+            const name = document.getElementById('sName').value.trim();
+            const phone = document.getElementById('sPhone').value.trim();
+            const address = document.getElementById('sAddress').value.trim();
+            const deals = document.getElementById('sDeals').value.trim();
+            const bank = document.getElementById('sBank').value.trim();
+            const accountNumber = document.getElementById('sAccountNumber').value.trim();
+
+            marketDb.suppliers = marketDb.suppliers || [];
+
+            if (id) {
+                const sIdx = marketDb.suppliers.findIndex(x => x.id === id);
+                if (sIdx !== -1) {
+                    marketDb.suppliers[sIdx] = { ...marketDb.suppliers[sIdx], name, phone, address, deals, bank, accountNumber, updatedAt: Date.now() };
+                }
+            } else {
+                marketDb.suppliers.push({ id: 'sup_' + Date.now(), name, phone, address, deals, bank, accountNumber, updatedAt: Date.now() });
+            }
+
+            await window.saveMarketState(true);
+            closeModals();
+            window.renderSuppliers();
+            window.populateSupplierSelects();
+            alert("Supplier saved & synced!");
+        };
+
+        window.deleteSupplier = async (id) => {
+            if(!confirm("Delete supplier?")) return;
+            marketDb.suppliers = (marketDb.suppliers || []).filter(s => s.id !== id);
+            marketDb.deletedIds = marketDb.deletedIds || [];
+            marketDb.deletedIds.push(id);
+            await window.saveMarketState(true);
+            window.renderSuppliers();
+            window.populateSupplierSelects();
+        };
+
+        window.renderMarketProducts = () => {
+            const cont = document.getElementById('supplierGroupedProductsContainer');
+            if(!cont) return;
+            const q = (document.getElementById('productSearch')?.value || '').toLowerCase();
+            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q));
+            
+            cont.innerHTML = list.map(p => {
+                const stats = window.getProductLiveStats(p);
+                return `<div class="card" style="margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <b>${esc(p.name)}</b> <span class="badge size-small">${p.unit}</span>
+                            <div style="font-size:12px; color:#555; margin-top:3px;">
+                                <span class="admin-only">Wholesale: ${money(p.cost)} | </span>Retail: ${money(p.sell)} <span class="admin-only">| Est. Profit: <b class="text-green">+${money((p.sell*(p.packQty||1))-p.cost)}</b></span>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="badge stock-badge-green">${stats.availableUnits} Available</span>
+                            <div style="margin-top:5px; display:flex; gap:4px; justify-content:flex-end;">
+                                <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
+                                <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">Del</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') || '<p style="text-align:center; color:#999; padding:15px;">No products registered.</p>';
+        };
+
+        window.openProductModal = () => {
+            document.getElementById('mktProdModalTitle').innerText = 'Register Product';
+            document.getElementById('mktProductId').value = '';
+            document.getElementById('mpName').value = '';
+            document.getElementById('mpCost').value = '';
+            document.getElementById('mpPackQty').value = '1';
+            document.getElementById('mpSell').value = '';
+            document.getElementById('mpUnit').value = 'Big';
+            window.populateSupplierSelects();
+            document.getElementById('marketProductModal').style.display = 'flex';
+        };
+
+        window.editMarketProduct = (id) => {
+            const p = (marketDb.products || []).find(x => x.id === id);
+            if (!p) return;
+            window.populateSupplierSelects();
+            document.getElementById('mktProdModalTitle').innerText = '✏️ Edit Product';
+            document.getElementById('mktProductId').value = p.id;
+            document.getElementById('mpName').value = p.name || '';
+            document.getElementById('mpSupplier').value = p.supplierId || '';
+            document.getElementById('mpCategory').value = p.category || (marketDb.categories && marketDb.categories[0]) || '';
+            document.getElementById('mpUnit').value = p.unit || 'Big';
+            document.getElementById('mpCost').value = p.cost !== undefined ? p.cost : '';
+            document.getElementById('mpPackQty').value = p.packQty || 1;
+            document.getElementById('mpSell').value = p.sell !== undefined ? p.sell : '';
+            document.getElementById('marketProductModal').style.display = 'flex';
+        };
+
+        window.saveMarketProduct = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('mktProductId').value;
+            const name = document.getElementById('mpName').value.trim();
+            const supplierId = document.getElementById('mpSupplier').value;
+            const category = document.getElementById('mpCategory').value;
+            const unit = document.getElementById('mpUnit').value;
+            const cost = Number(document.getElementById('mpCost').value) || 0;
+            const sell = Number(document.getElementById('mpSell').value) || 0;
+            const packQty = Math.max(1, Number(document.getElementById('mpPackQty').value) || 1);
+
+            marketDb.products = marketDb.products || [];
+
+            if (id) {
+                const existingIdx = marketDb.products.findIndex(x => x.id === id);
+                if (existingIdx !== -1) {
+                    marketDb.products[existingIdx] = { ...marketDb.products[existingIdx], name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() };
+                }
+            } else {
+                marketDb.products.push({ id: 'prod_' + Date.now(), name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() });
+                const docId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                await setDoc(doc(db, "shops", currentBizId, "products", docId), {
+                    name, category, price: sell, cost, stock: 0, initStock: 0, itemsPerPack: packQty, barcode: '', expiryDate: ''
+                }, { merge: true });
+            }
+
+            await window.saveMarketState(true);
+            closeModals();
+            window.renderMarketProducts();
+            window.renderOrderGoodsList();
+        };
+
+        window.deleteMarketProduct = async (id) => {
+            if(!confirm(`Delete this product from catalog?`)) return;
+            marketDb.products = (marketDb.products || []).filter(prod => prod.id !== id);
+            marketDb.deletedIds = marketDb.deletedIds || [];
+            marketDb.deletedIds.push(id);
+            if (markedOrderState[id]) delete markedOrderState[id];
+
+            await window.saveMarketState(true);
+            window.renderMarketProducts();
+            window.renderOrderGoodsList();
+        };
+
+        window.renderReports = () => {
+            const cost = (marketDb.transactions || []).reduce((a,t)=>a+Number(t.total||0),0);
+            const paid = (marketDb.transactions || []).reduce((a,t)=>a+Number(t.paid||0),0);
+            const bal = (marketDb.transactions || []).reduce((a,t)=>a+Number(t.balance||0),0);
+            const prof = (marketDb.transactions || []).reduce((a,t)=>a+Number(t.profit||0),0);
+
+            document.getElementById('rCost').innerText = money(cost);
+            document.getElementById('rPaid').innerText = money(paid);
+            document.getElementById('rBalance').innerText = money(bal);
+            document.getElementById('rProfit').innerText = money(prof);
+
+            // Calculate Top Profit Products Breakdown
+            const prodProfitMap = {};
+            (marketDb.transactions || []).forEach(t => {
+                (t.items || []).forEach(it => {
+                    const key = it.name.trim();
+                    const profitMade = (((it.sell * (it.packQty || 1)) - it.cost) * it.qty);
+                    if (!prodProfitMap[key]) prodProfitMap[key] = { profit: 0, packs: 0 };
+                    prodProfitMap[key].profit += profitMade;
+                    prodProfitMap[key].packs += Number(it.qty || 1);
+                });
+            });
+
+            const profitList = Object.entries(prodProfitMap).sort((a,b) => b[1].profit - a[1].profit);
+            const repDiv = document.getElementById('productProfitReport');
+            if (repDiv) {
+                repDiv.innerHTML = profitList.length ? profitList.map(([name, val], idx) => `
+                    <div style="padding:10px 12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <b>${idx + 1}. ${esc(name)}</b><br>
+                            <small style="color:#667085;">Total Purchased: ${val.packs} packs</small>
+                        </div>
+                        <b class="text-green">+${money(val.profit)}</b>
+                    </div>
+                `).join('') : '<p style="text-align:center; color:#999; padding:15px;">No purchase sales recorded yet.</p>';
+            }
+        };
+
+        window.exportMarketPdf = () => {
+            const { jsPDF } = window.jspdf;
+            const docPdf = new jsPDF();
+            docPdf.text("STARBITE - MARKET PURCHASE REPORT", 14, 15);
+            docPdf.setFontSize(10);
+            docPdf.text(`Shop: ${marketDb.shop.name || currentBizId} | Date: ${new Date().toLocaleDateString()}`, 14, 22);
+
+            const rows = [];
+            (marketDb.transactions || []).forEach(t => {
+                const s = supplier(t.supplierId);
+                (t.items || []).forEach(it => {
+                    rows.push([
+                        new Date(t.date).toLocaleDateString(),
+                        s?.name || 'Supplier',
+                        it.name,
+                        `${it.qty} pks (${it.qty * (it.packQty||1)} pcs)`,
+                        money(it.lineTotal),
+                        t.status === 'paid' ? 'Paid' : `Owed (${money(t.balance)})`
+                    ]);
+                });
+            });
+
+            docPdf.autoTable({
+                startY: 28,
+                head: [['Date', 'Supplier', 'Product', 'Quantity', 'Cost', 'Status']],
+                body: rows
+            });
+            docPdf.save(`market_purchase_report_${Date.now()}.pdf`);
+        };
+
+        window.renderOrderVoucherContent = () => {
+            document.getElementById('voucherDate').innerText = new Date().toLocaleDateString();
+            document.getElementById('voucherBuyerName').innerText = marketDb.shop.name;
+            document.getElementById('voucherBuyerPhone').innerText = marketDb.shop.phone ? `Phone: ${marketDb.shop.phone}` : '';
+            
+            const filterSupId = document.getElementById('voucherSupplierFilter').value;
+            const sup = (marketDb.suppliers || []).find(s => s.id === filterSupId);
+            document.getElementById('voucherSupplierName').innerText = sup ? sup.name : 'All Registered Suppliers';
+            document.getElementById('voucherSupplierAddress').innerText = sup ? (sup.address || '') : '';
+
+            const tbody = document.getElementById('voucherItemsTable');
+            tbody.innerHTML = '';
+            
+            let items = [];
+            const src = window.currentVoucherSource || 'marked';
+            
+            if(src === 'marked') {
+                Object.keys(markedOrderState).forEach(id => {
+                    if(markedOrderState[id]?.checked) {
+                        const p = (marketDb.products || []).find(x => x.id === id);
+                        if(p && (!filterSupId || markedOrderState[id].supplierId === filterSupId)) {
+                            items.push({ p, q: markedOrderState[id].qty });
+                        }
+                    }
+                });
+            } else {
+                (marketDb.needs || []).filter(n => n.status === 'pending' && (!filterSupId || n.supplierId === filterSupId)).forEach(n => {
+                    const p = (marketDb.products || []).find(x => x.id === n.productId);
+                    if(p) items.push({ p, q: n.qty });
+                });
+            }
+
+            tbody.innerHTML = items.length ? items.map((it, idx) => `<tr>
+                <td style="text-align:center;">${idx+1}</td>
+                <td><b>${esc(it.p?.name)}</b></td>
+                <td style="text-align:center;"><span class="badge ${it.p?.unit==='Big'?'size-big':'size-small'}">${it.p?.unit}</span></td>
+                <td style="text-align:center;">${esc(it.p?.category || 'General')}</td>
+                <td style="text-align:center; font-weight:bold;">${it.q} packs</td>
+            </tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding:15px; color:#999;">No marked products for this supplier.</td></tr>';
+        };
+
+        window.openOrderVoucherModal = (src = 'needs') => {
+            window.currentVoucherSource = src;
+            window.populateSupplierSelects();
+            window.renderOrderVoucherContent();
+            document.getElementById('orderVoucherModal').style.display = 'flex';
+        };
+
+        window.sendOrderVoucherWhatsAppText = () => {
+            const sId = document.getElementById('voucherSupplierFilter').value;
+            const sup = (marketDb.suppliers || []).find(s => s.id === sId);
+            
+            let items = [];
+            document.querySelectorAll('#voucherItemsTable tr').forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if(tds.length >= 5 && !tr.innerText.includes("No marked products")) {
+                    items.push({ name: tds[1].innerText.trim(), size: tds[2].innerText.trim(), qty: tds[4].innerText.trim() });
+                }
+            });
+
+            if(items.length === 0) return alert("No items to send. Mark products first!");
+
+            let message = `*GOODS PURCHASE ORDER*\n🏪 *Buyer:* ${marketDb.shop.name || currentBizId}\n`;
+            if(sup) message += `🏢 *Supplier:* ${sup.name}\n`;
+            message += `📅 *Date:* ${new Date().toLocaleDateString()}\n\n*REQUESTED ITEMS:*\n`;
+            items.forEach((it, idx) => { message += `${idx+1}. ${it.name} [${it.size}] - ${it.qty}\n`; });
+            message += `\nPlease confirm and prepare order. Thank you!`;
+
+            let phone = sup && sup.phone ? sup.phone.replace(/\D/g, '') : '';
+            if(phone.startsWith('0')) phone = '234' + phone.substring(1);
+            
+            window.open(phone ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+        };
+
+        window.shareOrderVoucherImage = async () => {
+            const el = document.getElementById('printOrderVoucher');
+            if (!el) return;
+            try {
+                const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = `order_slip_${Date.now()}.png`;
+                a.click();
+            } catch(err) { alert("Image rendering error: " + err.message); }
+        };
+
+        window.populateSupplierSelects = function() {
+            const html = '<option value="">All Suppliers</option>' + (marketDb.suppliers || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+            ['tSupplier','needSupplierFilter','voucherSupplierFilter','mpSupplier','popMarkSupplierSelect','egb-supplier'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    const cur = el.value;
+                    el.innerHTML = id.includes('Filter') ? html : '<option value="">Select Supplier</option>' + (marketDb.suppliers || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+                    if(cur) el.value = cur;
+                }
+            });
+            const catOpts = (marketDb.categories || DEFAULT_CATEGORIES).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+            const orderCat = document.getElementById('orderCategoryFilter');
+            const mpCat = document.getElementById('mpCategory');
+            if(orderCat) orderCat.innerHTML = '<option value="">All Categories</option>' + catOpts;
+            if(mpCat) mpCat.innerHTML = catOpts + '<option value="__new__">➕ Add New...</option>';
+        };
+
+        window.renderAllMarketViews = () => {
+            window.populateSupplierSelects();
+            window.renderOrderGoodsList();
+            window.renderNeeds();
+            window.renderMarketHistory();
+            window.renderPayments();
+            window.renderSuppliers();
+            window.renderMarketProducts();
+            window.renderReports();
+        };
+
+        window.promptAddCategory = () => {
+            const cat = prompt("Enter new category name:");
+            if (!cat || !cat.trim()) return;
+            marketDb.categories = marketDb.categories || [...DEFAULT_CATEGORIES];
+            if (!marketDb.categories.includes(cat.trim())) {
+                marketDb.categories.push(cat.trim());
+                window.saveMarketState(true);
+                window.populateSupplierSelects();
+            }
+        };
+
+        window.handleProductCategoryChange = (sel) => {
+            if (sel && sel.value === '__new__') {
+                const cat = prompt("Enter new category name:");
+                if (cat && cat.trim()) {
+                    marketDb.categories = marketDb.categories || [...DEFAULT_CATEGORIES];
+                    if (!marketDb.categories.includes(cat.trim())) {
+                        marketDb.categories.push(cat.trim());
+                        window.saveMarketState(true);
+                    }
+                    window.populateSupplierSelects();
+                    sel.value = cat.trim();
+                } else {
+                    sel.value = (marketDb.categories && marketDb.categories[0]) || 'General';
+                }
+            }
+        };
+
+        // Real-Time Listeners for Shop Stock & Sales
+        window.updateRoleUI();
+
+        onSnapshot(doc(db, "shops", currentBizId), (snap) => {
+            if (snap.exists()) {
+                currentShopMeta = snap.data();
+                const topShop = document.getElementById('topShopName');
+                if (topShop) topShop.innerText = currentShopMeta.name || marketDb.shop.name || currentBizId;
+                
+                const planBadge = document.getElementById('planBadge');
+                if (planBadge) {
+                    const isPrem = currentShopMeta.plan === 'premium';
+                    planBadge.className = isPrem ? 'top-badge badge-plan-prem' : 'top-badge';
+                    planBadge.innerText = isPrem ? '👑 Premium' : '⭐ Trial';
+                }
+            }
+        }, err => window.showDbError(err, "ShopMeta"));
+
+        onSnapshot(doc(db, "shops", currentBizId, "market", "main_store"), (docSnap) => {
+            if (docSnap.exists()) {
+                window.marketDb = docSnap.data();
+                localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
+                window.renderAllMarketViews();
+            }
+        }, err => window.showDbError(err, "Market Sync"));
+
+        onSnapshot(collection(db, "shops", currentBizId, "products"), (snap) => {
+            shopProducts = snap.docs.filter(d => d.id !== '_backup').map(d => ({ id: d.id, ...d.data() }));
+            window.renderOrderGoodsList();
+            window.renderMarketProducts();
+        }, err => window.showDbError(err, "Products Sync"));
+
+        onSnapshot(collection(db, "shops", currentBizId, "sales"), (snap) => {
+            shopSales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            window.renderOrderGoodsList();
+        }, err => window.showDbError(err, "Sales Sync"));
+
+        window.renderAllMarketViews();
     </script>
 </body>
-  </html>
+</html>
