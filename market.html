@@ -26,7 +26,7 @@
             --shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
         
-        /* Strict Staff Privacy: Hides financial details and admin reports from workers */
+        /* Strict Staff Privacy: Hides financial details and admin sub-pages from workers */
         body.is-staff .admin-only { display: none !important; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; user-select: none; color: var(--text); }
         *{ box-sizing: border-box; }
@@ -40,9 +40,6 @@
         .top-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
         .badge-live { background: #12b76a; color: white; cursor: pointer; }
         .badge-syncing { background: #f79009; color: white; }
-        .badge-plan-prem { background: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 800; }
-        /* Read-only status badge controlled exclusively by main app */
-        .badge-role { background: #37474f; color: #fde047; cursor: default; }
         .badge-logout { background: rgba(255,255,255,0.2); color: white; cursor: pointer; }
         
         .container { padding: 15px; max-width: 100%; margin: 0 auto; }
@@ -104,20 +101,17 @@
     <div id="view-market-workspace">
         <header class="header">
             <div class="header-brand">
-                <a href="Business manager app.html#sec-dash" style="color:white; text-decoration:none; margin-right:4px; font-size:18px;">←</a>
+                <a href="Business%20manager%20app.html#sec-dash" style="color:white; text-decoration:none; margin-right:4px; font-size:18px;">←</a>
                 <span>📋</span> STARBITE Market Buyer
             </div>
             <div class="header-badges">
                 <span class="top-badge badge-live" id="cloudStatusBadge" onclick="window.forceCloudSync()">☁️ Live</span>
-                <span class="top-badge badge-plan-prem" id="planBadge">👑 Premium</span>
-                <!-- Read-only status badge: Controlled exclusively from the main Shop app -->
-                <span class="top-badge badge-role" id="roleBadge">👑 Admin</span>
-                <a href="Business manager app.html#sec-dash" class="top-badge badge-logout">🚪 <span id="topShopName">Shop</span> (Exit)</a>
+                <a href="Business%20manager%20app.html#sec-dash" class="top-badge badge-logout">🚪 <span id="topShopName">Shop</span> (Exit)</a>
             </div>
         </header>
 
         <div class="container">
-            <!-- Sub-Pages Navigation -->
+            <!-- Sub-Pages Navigation: Admin tabs are controlled by Business Manager -->
             <div class="mkt-sub-nav">
                 <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
                 <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
@@ -446,11 +440,19 @@
     <!-- UI Subpage Navigation Scripts -->
     <script>
         function showMktPage(pageId) {
+            // Guard: If worker mode is active, prevent opening admin-only tabs
+            if (document.body.classList.contains('is-staff')) {
+                const targetBtn = Array.from(document.querySelectorAll('.mkt-sub-btn')).find(b => b.getAttribute('onclick')?.includes(pageId));
+                if (targetBtn && targetBtn.classList.contains('admin-only')) {
+                    pageId = 'mkt-order';
+                }
+            }
+
             document.querySelectorAll('.mkt-page').forEach(p => p.classList.remove('active-page'));
             const pageEl = document.getElementById(pageId);
             if(pageEl) pageEl.classList.add('active-page');
             document.querySelectorAll('.mkt-sub-btn').forEach(b => b.classList.remove('active'));
-            const activeBtn = Array.from(document.querySelectorAll('.mkt-sub-btn')).find(b => b.getAttribute('onclick').includes(pageId));
+            const activeBtn = Array.from(document.querySelectorAll('.mkt-sub-btn')).find(b => b.getAttribute('onclick')?.includes(pageId));
             if(activeBtn) activeBtn.classList.add('active');
             
             if(pageId === 'mkt-buy') {
@@ -485,12 +487,10 @@
         const db = getFirestore(app);
 
         let currentBizId = localStorage.getItem('starbite_active_biz_id') || '';
-        
-        // Single central Admin control: Inherits role setting from main app session
         let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
 
         if (!currentBizId) {
-            window.location.href = 'Business manager app.html';
+            window.location.href = 'Business%20manager%20app.html';
         }
 
         window.showDbError = (err, context = "Market Database") => {
@@ -516,33 +516,32 @@
         const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
         const supplier = id => (marketDb.suppliers || []).find(x => x.id === id);
 
-        // Read-only role UI: Display status based strictly on the main shop's setting
+        // Controlled exclusively from Business Manager App:
+        // Sets/unsets .is-staff on body, displaying or hiding all Admin tabs & financial elements
         window.updateRoleUI = () => {
-            const roleBadge = document.getElementById('roleBadge');
+            isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
             if (isStaffRole) {
                 document.body.classList.add('is-staff');
-                if (roleBadge) {
-                    roleBadge.innerText = '👷 Worker Mode';
-                    roleBadge.style.background = '#475569';
-                    roleBadge.style.color = '#fff';
+                const activePage = document.querySelector('.mkt-page.active-page');
+                if (activePage && (activePage.id === 'mkt-history' || activePage.id === 'mkt-payments' || activePage.id === 'mkt-reports')) {
+                    showMktPage('mkt-order');
                 }
             } else {
                 document.body.classList.remove('is-staff');
-                if (roleBadge) {
-                    roleBadge.innerText = '👑 Admin';
-                    roleBadge.style.background = '#37474f';
-                    roleBadge.style.color = '#fde047';
-                }
             }
         };
 
-        // Live listening for mode changes performed by the Admin in the main app
+        // Listen for role changes from main shop across tabs, history, and page returns
         window.addEventListener('storage', (e) => {
             if (e.key === 'starbite_is_staff') {
-                isStaffRole = e.newValue === 'true';
                 window.updateRoleUI();
+                window.renderOrderGoodsList();
+                window.renderMarketProducts();
+                window.handleTransactionSupplierChange();
             }
         });
+        window.addEventListener('pageshow', () => window.updateRoleUI());
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) window.updateRoleUI(); });
 
         function mergeEntities(localArr, cloudArr) {
             const map = new Map();
@@ -619,9 +618,16 @@
                 });
             });
 
-            let availableUnits = shopProd && typeof shopProd.stock === 'number' 
-                ? shopProd.stock 
-                : Math.max(0, boughtUnits - soldUnits);
+            let availableUnits = 0;
+            if (shopProd && typeof shopProd.stock === 'number') {
+                const roomStock = Number(shopProd.stock) || 0;
+                const freezerPacks = Number(shopProd.freezerPacks) || 0;
+                const packMultiplier = Number(shopProd.itemsPerPack) || Number(prod.packQty) || 12;
+                const freezerUnits = Math.floor(freezerPacks * packMultiplier);
+                availableUnits = Math.max(0, roomStock + freezerUnits);
+            } else {
+                availableUnits = Math.max(0, boughtUnits - soldUnits);
+            }
 
             return { boughtUnits, soldUnits, availableUnits, shopProd };
         };
@@ -863,16 +869,17 @@
             const paid = Number(document.getElementById('tPaid').value || 0);
 
             if (editingId) {
-                // Revert previous stock additions first
                 const oldTx = (marketDb.transactions || []).find(x => x.id === editingId);
                 if (oldTx) {
                     for(const oldIt of (oldTx.items || [])) {
                         const oldPieces = (Number(oldIt.qty) || 1) * (Number(oldIt.packQty) || 1);
                         const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === (oldIt.name || '').trim().toLowerCase());
                         if (matchShop) {
+                            const curStock = Number(matchShop.stock) || 0;
+                            const curInit = Number(matchShop.initStock) || curStock;
                             await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
-                                stock: increment(-oldPieces),
-                                initStock: increment(-oldPieces)
+                                stock: Math.max(0, curStock - oldPieces),
+                                initStock: Math.max(0, curInit - oldPieces)
                             });
                         }
                     }
@@ -1001,7 +1008,6 @@
             } catch(e) { window.showDbError(e, "Delete Purchase"); }
         };
 
-        /* Fine-grained Edit/Delete for Items inside Purchases */
         window.openEditGoodsBought = (txId, itemIdx) => {
             const t = (marketDb.transactions || []).find(x => x.id === txId);
             if (!t || !t.items || !t.items[itemIdx]) return;
@@ -1409,7 +1415,19 @@
             if (id) {
                 const existingIdx = marketDb.products.findIndex(x => x.id === id);
                 if (existingIdx !== -1) {
+                    const oldProd = marketDb.products[existingIdx];
+                    const oldNameLower = (oldProd.name || '').trim().toLowerCase();
                     marketDb.products[existingIdx] = { ...marketDb.products[existingIdx], name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() };
+
+                    // Synchronize updates directly to Shop POS product document
+                    const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === oldNameLower);
+                    if (matchShop) {
+                        try {
+                            await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
+                                name, category, price: sell, cost, itemsPerPack: packQty
+                            });
+                        } catch(err) { window.showDbError(err, "Product Update Sync"); }
+                    }
                 }
             } else {
                 marketDb.products.push({ id: 'prod_' + Date.now(), name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() });
@@ -1426,7 +1444,19 @@
         };
 
         window.deleteMarketProduct = async (id) => {
+            const p = (marketDb.products || []).find(prod => prod.id === id);
             if(!confirm(`Delete this product from catalog?`)) return;
+            
+            if (p) {
+                const pNameLower = (p.name || '').trim().toLowerCase();
+                const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === pNameLower);
+                if (matchShop) {
+                    try {
+                        await deleteDoc(doc(db, "shops", currentBizId, "products", matchShop.id));
+                    } catch(err) { window.showDbError(err, "Delete Shop Product"); }
+                }
+            }
+
             marketDb.products = (marketDb.products || []).filter(prod => prod.id !== id);
             marketDb.deletedIds = marketDb.deletedIds || [];
             marketDb.deletedIds.push(id);
@@ -1448,7 +1478,6 @@
             document.getElementById('rBalance').innerText = money(bal);
             document.getElementById('rProfit').innerText = money(prof);
 
-            // Calculate Top Profit Products Breakdown
             const prodProfitMap = {};
             (marketDb.transactions || []).forEach(t => {
                 (t.items || []).forEach(it => {
@@ -1647,7 +1676,6 @@
             }
         };
 
-        // Real-Time Listeners for Shop Stock & Sales
         window.updateRoleUI();
 
         onSnapshot(doc(db, "shops", currentBizId), (snap) => {
@@ -1656,11 +1684,10 @@
                 const topShop = document.getElementById('topShopName');
                 if (topShop) topShop.innerText = currentShopMeta.name || marketDb.shop.name || currentBizId;
                 
-                const planBadge = document.getElementById('planBadge');
-                if (planBadge) {
-                    const isPrem = currentShopMeta.plan === 'premium';
-                    planBadge.className = isPrem ? 'top-badge badge-plan-prem' : 'top-badge';
-                    planBadge.innerText = isPrem ? '👑 Premium' : '⭐ Trial';
+                const isPrem = currentShopMeta.plan === 'premium';
+                if (!isPrem) {
+                    alert("🔒 The Market Buyer Workspace requires a Premium Plan. Returning to Shop Manager.");
+                    window.location.href = 'Business%20manager%20app.html#sec-dash';
                 }
             }
         }, err => window.showDbError(err, "ShopMeta"));
@@ -1688,3 +1715,4 @@
     </script>
 </body>
 </html>
+
