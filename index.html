@@ -329,7 +329,7 @@
                     <h3>📜 Reports &amp; Sales History</h3>
                     <div class="admin-only" style="margin-bottom:10px;">
                         <label style="font-size:12px; font-weight:bold;">Filter by Staff:</label>
-                        <select id="staffSelector" style="margin:0;"><option value="all">All Staff</option></select>
+                        <select id="staffSelector" style="margin:0;" onchange="runIf(window.renderShopHistory)"><option value="all">All Staff</option></select>
                     </div>
                     <div style="display:flex; gap:8px; margin-bottom:12px;">
                         <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'day')">📄 Daily PDF</button>
@@ -916,39 +916,53 @@
             return (p && p.category) ? p.category : 'General';
         }
 
+        // Execution guard prevents re-trigger loops during snapshot reconciliation
+        let isSyncingProducts = false;
         window.syncAndRecoverAllProducts = async () => {
-            let recovered = 0;
-            marketDb.products = marketDb.products || [];
+            if (isSyncingProducts) return;
+            isSyncingProducts = true;
 
-            (window.products || []).forEach(sp => {
-                if (!sp || !sp.name) return;
-                const sName = sp.name.trim().toLowerCase();
-                const exists = marketDb.products.some(mp => (mp.name || '').trim().toLowerCase() === sName);
-                if (!exists) {
-                    marketDb.products.push({
-                        id: sp.id || ('prod_' + Date.now() + Math.random().toString(36).slice(2,5)),
-                        name: sp.name, category: getProductCategory(sp),
-                        supplierId: (marketDb.suppliers && marketDb.suppliers[0] ? marketDb.suppliers[0].id : ''),
-                        unit: 'Big', cost: sp.cost || 0, packQty: sp.itemsPerPack || 12, sell: sp.price || 0, updatedAt: Date.now()
-                    });
-                    recovered++;
-                }
-            });
+            try {
+                let recovered = 0;
+                marketDb.products = marketDb.products || [];
 
-            for (const mp of marketDb.products) {
-                if (!mp || !mp.name) continue;
-                const mName = mp.name.trim().toLowerCase();
-                const exists = (window.products || []).some(sp => (sp.name || '').trim().toLowerCase() === mName);
-                if (!exists) {
-                    const docId = mName.replace(/[^a-z0-9]/g, '_');
-                    try {
-                        await setDoc(doc(db, "shops", currentBizId, "products", docId), {
-                            name: mp.name, category: mp.category || 'General', price: mp.sell || 0, cost: mp.cost || 0,
-                            stock: 0, initStock: 0, itemsPerPack: mp.packQty || 12, barcode: '', expiryDate: ''
-                        }, { merge: true });
+                (window.products || []).forEach(sp => {
+                    if (!sp || !sp.name) return;
+                    const sName = sp.name.trim().toLowerCase();
+                    const exists = marketDb.products.some(mp => (mp.name || '').trim().toLowerCase() === sName);
+                    if (!exists) {
+                        marketDb.products.push({
+                            id: sp.id || ('prod_' + Date.now() + Math.random().toString(36).slice(2,5)),
+                            name: sp.name, category: getProductCategory(sp),
+                            supplierId: (marketDb.suppliers && marketDb.suppliers[0] ? marketDb.suppliers[0].id : ''),
+                            unit: 'Big', cost: sp.cost || 0, packQty: sp.itemsPerPack || 12, sell: sp.price || 0, updatedAt: Date.now()
+                        });
                         recovered++;
-                    } catch(e) {}
+                    }
+                });
+
+                if (recovered > 0 && currentBizId) {
+                    marketDb.updatedAt = Date.now();
+                    localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
+                    await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), JSON.parse(JSON.stringify(marketDb)), { merge: true });
                 }
+
+                for (const mp of marketDb.products) {
+                    if (!mp || !mp.name) continue;
+                    const mName = mp.name.trim().toLowerCase();
+                    const exists = (window.products || []).some(sp => (sp.name || '').trim().toLowerCase() === mName);
+                    if (!exists) {
+                        const docId = mName.replace(/[^a-z0-9]/g, '_');
+                        try {
+                            await setDoc(doc(db, "shops", currentBizId, "products", docId), {
+                                name: mp.name, category: mp.category || 'General', price: mp.sell || 0, cost: mp.cost || 0,
+                                stock: 0, initStock: 0, itemsPerPack: mp.packQty || 12, barcode: '', expiryDate: ''
+                            }, { merge: true });
+                        } catch(e) {}
+                    }
+                }
+            } finally {
+                isSyncingProducts = false;
             }
         };
 
@@ -1070,6 +1084,14 @@
             }, err => window.showDbError(err, "Market Sync"));
         };
 
+        // Unified Total Stock check function
+        function getTotalStockUnits(p) {
+            const roomStock = Number(p.stock) || 0;
+            const freezerPacks = Number(p.freezerPacks) || 0;
+            const packMultiplier = Number(p.itemsPerPack) || 12;
+            return roomStock + Math.floor(freezerPacks * packMultiplier);
+        }
+
         window.renderDash = () => {
             const today = new Date().toISOString().split('T')[0];
             const todayCash = sales.filter(s => s.date && s.date.startsWith(today) && (s.type === 'Cash' || s.type === 'Debt Payment')).reduce((a, b) => a + Number(b.total || 0), 0);
@@ -1085,7 +1107,7 @@
             document.getElementById('d-owed').innerText = "₦" + totalOwed.toLocaleString();
             document.getElementById('d-mkt-bought').innerText = totalBought.toLocaleString() + " pcs";
             document.getElementById('d-mkt-sold').innerText = totalSold.toLocaleString() + " pcs";
-            document.getElementById('d-stock').innerText = filteredProducts.filter(p => (p.stock || 0) <= 5).length;
+            document.getElementById('d-stock').innerText = filteredProducts.filter(p => getTotalStockUnits(p) <= 5).length;
         };
 
         window.showLowStock = () => {
@@ -1094,10 +1116,12 @@
             list.innerHTML = '';
             const lowItems = [];
             filteredProducts.forEach(p => {
-                const totalPacks = Math.floor((p.stock || 0) / (p.itemsPerPack || 12));
+                const totalUnits = getTotalStockUnits(p);
+                const packMultiplier = p.itemsPerPack || 12;
+                const totalPacks = Math.floor(totalUnits / packMultiplier);
                 let reasons = [];
-                if ((p.stock || 0) <= 5) reasons.push(`${p.stock || 0} pcs remaining`);
-                if (totalPacks <= 1) reasons.push(`Room Low (${totalPacks} pk)`);
+                if (totalUnits <= 5) reasons.push(`${totalUnits} pcs total`);
+                if (totalPacks <= 1) reasons.push(`Low (${totalPacks} pk)`);
                 if (reasons.length > 0) lowItems.push({ name: p.name, reasons: reasons.join(", ") });
             });
             list.innerHTML = lowItems.length ? lowItems.map(p => `<div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>${p.name}</span><span class="text-red"><b>${p.reasons}</b></span></div>`).join('') : '<p style="text-align:center; color:#777; padding:15px;">All items adequately stocked.</p>';
@@ -1158,7 +1182,7 @@
             const qty = parseInt(document.getElementById('qty').value);
             if(isNaN(idx) || !qty) return;
             const p = filteredProducts[idx];
-            const maxSellable = (p.stock || 0) + Math.floor((Number(p.freezerPacks)||0) * (p.itemsPerPack||12));
+            const maxSellable = getTotalStockUnits(p);
             if(qty > maxSellable) return alert(`Exceeds available stock (${maxSellable} pcs)!`);
 
             const exist = cart.find(c => c.id === p.id);
@@ -1192,7 +1216,7 @@
             if(delta === -9999) cart.splice(i, 1);
             else {
                 const p = cart[i];
-                const maxAvailable = (p.stock || 0) + Math.floor((Number(p.freezerPacks)||0) * (p.itemsPerPack||12));
+                const maxAvailable = getTotalStockUnits(p);
                 if(p.qty + delta > maxAvailable) return alert("Cannot exceed available stock!");
                 p.qty += delta;
                 if(p.qty <= 0) cart.splice(i, 1);
@@ -1356,8 +1380,7 @@
                 });
             }
         };
-
-        window.resetAllStocksToZero = async () => {
+window.resetAllStocksToZero = async () => {
             if(!confirm("Reset ALL stock to 0?")) return;
             const backup = {};
             window.products.forEach(p => backup[p.id] = { stock: p.stock||0, initStock: p.initStock||0, freezerPacks: p.freezerPacks||0 });
@@ -1528,9 +1551,22 @@
 
         window.renderShopHistory = () => {
             const div = document.getElementById('mainHistList');
+            const staffSel = document.getElementById('staffSelector');
             if(!div) return;
-            div.innerHTML = sales.map(s => `<div style="padding:8px; border-bottom:1px solid #eee;">
-                <div><b>₦${Number(s.total || 0).toLocaleString()}</b> - <small>${s.desc} (${s.type})</small><br><span style="font-size:10px; color:#999;">${new Date(s.date).toLocaleString()}</span></div>
+
+            if (staffSel) {
+                const currentVal = staffSel.value || 'all';
+                const staffSet = new Set(['all']);
+                sales.forEach(s => { if (s.soldBy) staffSet.add(s.soldBy); });
+                staffSel.innerHTML = Array.from(staffSet).map(st => `<option value="${esc(st)}">${st === 'all' ? 'All Staff' : esc(st)}</option>`).join('');
+                if (Array.from(staffSet).includes(currentVal)) staffSel.value = currentVal;
+            }
+
+            const chosenStaff = staffSel ? staffSel.value : 'all';
+            const filteredSales = sales.filter(s => chosenStaff === 'all' || s.soldBy === chosenStaff);
+
+            div.innerHTML = filteredSales.map(s => `<div style="padding:8px; border-bottom:1px solid #eee;">
+                <div><b>₦${Number(s.total || 0).toLocaleString()}</b> - <small>${s.desc} (${s.type})</small><br><span style="font-size:10px; color:#999;">${new Date(s.date).toLocaleString()} • Sold by: ${esc(s.soldBy || 'Staff')}</span></div>
             </div>`).join('') || '<p style="text-align:center; color:#999; font-size:12px;">No sales recorded yet.</p>';
         };
 
@@ -1578,4 +1614,5 @@
         if (currentBizId) window.initBusinessListeners();
     </script>
 </body>
-                            </html>
+</html>
+        
