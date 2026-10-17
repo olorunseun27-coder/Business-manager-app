@@ -62,6 +62,7 @@
         .container { padding: 15px; max-width: 100%; margin: 0 auto; }
         .card { background: white; padding: 16px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; border: 1px solid var(--border); }
         .plan-alert-banner { background: linear-gradient(90deg, #ede9fe, #f5f3ff); border: 1px solid #c4b5fd; border-radius: 10px; padding: 10px 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; color: #4c1d95; }
+        .debt-caution-box { background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 10px; padding: 12px 14px; margin-bottom: 15px; color: #991b1b; font-size: 13px; line-height: 1.5; }
         
         .bank-info-box { background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 12px; padding: 16px; margin: 15px 0; text-align: left; }
         .bank-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
@@ -92,9 +93,6 @@
         
         .badge { font-size: 10px; padding: 4px 8px; border-radius: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; text-align: center; }
         .bg-full { background: #d4edda; color: #155724; } .bg-over { background: #f8d7da; color: #721c24; }
-        .stock-badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .stock-badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-        .size-small { background: #fef3f2; color: #b42318; }
 
         .category-stock-box { border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 16px; background: #fff; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .category-stock-header { background: #f8fafc; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -103,7 +101,9 @@
         .cat-chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; background: #e2e8f0; color: #334155; border: none; width: auto; margin: 0; white-space: nowrap; flex: none; }
         .cat-chip.active { background: #0d47a1; color: white; }
 
-        /* Navigation: Market is preserved in Tab Position 3 */
+        .cashier-bar { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+
+        /* Navigation */
         .nav { display: flex; justify-content: space-around; background: #fff; padding: 8px 0; position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ccc; z-index: 9999; box-shadow: 0 -2px 6px rgba(0,0,0,0.08); }
         .nav-btn { background: none; border: none; color: #777; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; padding: 2px 0; margin: 0; width: auto; text-decoration: none; cursor: pointer; }
         .nav-btn.active { color: #0d47a1; }
@@ -198,6 +198,9 @@
 
             <!-- DASHBOARD -->
             <div id="sec-dash" class="section active-section">
+                <!-- Real-time Caution Banner on Dashboard -->
+                <div id="dash-category-debt-banner" class="debt-caution-box" style="display:none;"></div>
+
                 <div class="dash-grid">
                     <div class="dash-card admin-only">
                         <span class="dash-num text-green" id="d-today">₦0</span>
@@ -206,6 +209,11 @@
                     <div class="dash-card admin-only">
                         <span class="dash-num text-red" id="d-owed">₦0</span>
                         <span class="dash-label">Total Debt Owed</span>
+                    </div>
+                    <!-- Tap-able Caution Warning Card on Dashboard -->
+                    <div class="dash-card" id="d-card-caution" onclick="runIf(window.showDebtCautionModal)" style="border: 1.5px solid #f87171; background: #fff5f5; display:none;">
+                        <span class="dash-num text-red" id="d-caution-count">0</span>
+                        <span class="dash-label text-red">⚠️ Debt Caution (Tap)</span>
                     </div>
                     <div class="dash-card" onclick="runIf(window.showLowStock)">
                         <span class="dash-num text-blue" id="d-stock">0</span>
@@ -229,6 +237,15 @@
                     </div>
                 </div>
 
+                <!-- Admin Worker Management Bar -->
+                <div class="card admin-only" style="margin-top:15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h4 style="margin:0; color:#0d47a1;">👥 Worker Staff Management</h4>
+                        <p style="font-size:12px; color:#667085; margin:3px 0 0;">Register worker profiles, manage personal PINs, and retrieve forgotten worker credentials.</p>
+                    </div>
+                    <button class="btn-blue" style="width:auto; padding:8px 14px; margin:0;" onclick="window.openWorkersModal()">👥 Manage Workers &amp; PINs</button>
+                </div>
+
                 <div class="card admin-only" style="border: 1px solid #fecaca; background: #fff5f5; margin-top: 15px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
@@ -244,6 +261,12 @@
 
             <!-- SELL TAB -->
             <div id="sec-sell" class="section">
+                <!-- Cashier indicator: stamps sales to the active worker -->
+                <div class="cashier-bar">
+                    <span>👤 Active Seller: <b id="activeCashierLabel" style="color:#0d47a1;">Admin</b></span>
+                    <button class="btn-dark btn-mini" onclick="window.openSwitchCashierModal()" style="padding:4px 8px;">🔄 Switch Seller</button>
+                </div>
+
                 <div class="card">
                     <h4 style="margin-top:0; color:#555;">⚡ Quick Add (Freezer stock only)</h4>
                     <div id="quickTapGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap:8px; margin-bottom:15px;"></div>
@@ -306,6 +329,8 @@
                     </div>
                     <p style="font-size:12px; color:#667085; margin-top:0;">Drinks, Eggs, and groceries track their own independent available stock. Transfers to freezer auto-deduct from room stock.</p>
 
+                    <div id="stock-category-debt-banner" class="debt-caution-box" style="display:none;"></div>
+
                     <input type="text" id="stockSearch" placeholder="🔍 Find any product by name..." onkeyup="window.renderStock()" style="margin-bottom:10px;">
                     
                     <div style="display:flex; gap:10px; margin-bottom:12px;">
@@ -328,7 +353,7 @@
                 <div class="card">
                     <h3>📜 Reports &amp; Sales History</h3>
                     <div class="admin-only" style="margin-bottom:10px;">
-                        <label style="font-size:12px; font-weight:bold;">Filter by Staff:</label>
+                        <label style="font-size:12px; font-weight:bold;">Filter by Seller / Staff:</label>
                         <select id="staffSelector" style="margin:0;" onchange="runIf(window.renderShopHistory)"><option value="all">All Staff</option></select>
                     </div>
                     <div style="display:flex; gap:8px; margin-bottom:12px;">
@@ -346,7 +371,7 @@
             </div>
         </div>
 
-        <!-- BOTTOM NAVIGATION: Market is maintained in its EXACT 3rd Position! -->
+        <!-- BOTTOM NAVIGATION -->
         <div class="nav">
             <button class="nav-btn active" id="btn-dash" onclick="nav('sec-dash', this)"><span>📊</span>Dash</button>
             <button class="nav-btn" id="btn-sell" onclick="nav('sec-sell', this)"><span>🛒</span>Sell</button>
@@ -354,6 +379,67 @@
             <button class="nav-btn" id="btn-debt" onclick="nav('sec-debt', this)"><span>📒</span>Debt</button>
             <button class="nav-btn" id="btn-stock" onclick="nav('sec-stock', this)"><span>📦</span>Stock</button>
             <button class="nav-btn admin-only" id="btn-hist" onclick="nav('sec-hist', this)"><span>📜</span>Hist</button>
+        </div>
+    </div>
+
+    <!-- MODAL: DETAILED CAUTION POPUP -->
+    <div id="mod-debt-caution-details" class="modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <h3 style="color:#b91c1c; margin-top:0;">⚠️ Supplier Debt Cautions</h3>
+            <p style="font-size:12px; color:#667085; margin-top:0;">These categories have less remaining retail stock value than the supplier debt owed:</p>
+            <div id="debtCautionModalList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <div style="display:flex; gap:6px;">
+                <button class="btn-blue admin-only" onclick="closeModals(); openMarketWorkspace('mkt-payments');" style="flex:2;">💳 Pay Supplier Debts in Market</button>
+                <button class="btn-dark" onclick="closeModals()" style="flex:1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DEDUCTION POPUP NOTICE WITH REMAINING VALUE -->
+    <div id="mod-stock-deduct-notice" class="modal">
+        <div class="modal-content" style="max-width: 440px; text-align: center;">
+            <span style="font-size: 38px;" id="sdn-icon">📦</span>
+            <h3 style="margin: 6px 0 2px; color: #0d47a1;" id="sdn-title">Stock Deducted</h3>
+            <p style="font-size: 13.5px; color: #475569; margin: 12px 0 14px; line-height: 1.6;" id="sdn-body"></p>
+            <div id="sdn-debt-warning" style="display:none; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12.5px; color: #b91c1c; font-weight: bold; text-align: left;"></div>
+            <button class="btn-green" onclick="document.getElementById('mod-stock-deduct-notice').style.display='none'">OK, Understood</button>
+        </div>
+    </div>
+
+    <!-- MODAL: WORKERS MANAGEMENT (ADMIN ONLY) -->
+    <div id="mod-workers" class="modal">
+        <div class="modal-content" style="max-width: 540px;">
+            <h3 style="margin-top:0; color:#0d47a1;">👥 Register &amp; Manage Workers</h3>
+            <p style="font-size:12px; color:#667085; margin-top:0;">Register workers with personal PINs. As admin, you can view or retrieve forgotten PINs anytime.</p>
+            
+            <form onsubmit="window.saveWorker(event)" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+                <b style="font-size:13px; color:#1e293b; display:block; margin-bottom:6px;">➕ Register New Worker</b>
+                <input type="text" id="w-name" placeholder="Worker Full Name" required>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <input type="tel" id="w-phone" placeholder="Phone Number" required>
+                    <input type="password" id="w-pin" placeholder="4-Digit Personal PIN" maxlength="6" required>
+                </div>
+                <input type="text" id="w-address" placeholder="Residential Address (Optional)">
+                <button class="btn-green" type="submit" style="margin-top:4px;">💾 Register Worker</button>
+            </form>
+
+            <h4 style="margin:10px 0 6px 0; color:#334155;">Active Workers Directory</h4>
+            <div id="workersList" style="max-height:220px; overflow-y:auto;"></div>
+
+            <button class="btn-dark" style="margin-top:10px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <!-- MODAL: SWITCH CASHIER / WORKER LOGIN -->
+    <div id="mod-switch-cashier" class="modal">
+        <div class="modal-content" style="max-width: 420px; text-align:center;">
+            <span style="font-size:36px;">👤</span>
+            <h3 style="margin:6px 0 2px; color:#0d47a1;">Select Active Seller</h3>
+            <p style="font-size:12px; color:#64748b; margin-bottom:12px;">Sales and payments will be credited to this seller.</p>
+            <select id="selWorkerCashier" style="margin-bottom:10px;" onchange="window.handleCashierSelectionChange()"></select>
+            <input type="password" id="cashierPinInput" placeholder="Enter Worker PIN (or Shop PIN for Admin)" maxlength="8" style="text-align:center;">
+            <button class="btn-green" onclick="window.confirmCashierLogin()">✅ Log In as Seller</button>
+            <button class="btn-dark" onclick="closeModals()" style="margin-top:5px;">Cancel</button>
         </div>
     </div>
 
@@ -528,7 +614,6 @@
             document.getElementById('tabAuthRegister').classList.toggle('active', mode === 'register');
         }
 
-        // Seamless Navigation
         function nav(id, btn) {
             document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
             const sec = document.getElementById(id);
@@ -541,7 +626,6 @@
             if(id === 'sec-dash' && window.renderDash) window.renderDash();
         }
 
-        // Links to the Separate Market Tab smoothly
         function openMarketWorkspace(subPage = '') {
             if (window.currentPlan !== 'premium') {
                 if(!confirm("🔒 The Market Buyer Workspace & Purchase Planner is a Premium Feature.\n\nWould you like to upgrade now?")) return;
@@ -552,7 +636,6 @@
             window.location.href = target;
         }
 
-        // Automatically navigates if returned from Market tab with hash
         window.addEventListener('DOMContentLoaded', () => {
             const h = window.location.hash.replace('#', '');
             if(h && document.getElementById(h)) {
@@ -610,8 +693,6 @@
             appId: "1:181078991416:web:6e562cccc19767561b7ccd"
         };
 
-        const USER_NAME = "Admin";
-
         window.showDbError = (err, context = "Database") => {
             console.warn(`Firestore [${context}]:`, err.message);
             const banner = document.getElementById('app-error-banner');
@@ -643,12 +724,15 @@
             }
         }, err => console.warn("Payment config sync:", err));
 
-        let currentBizId = localStorage.getItem('starbite_active_biz_id') || '';
+        // Always sanitize currentBizId to strip unwanted whitespace
+        let currentBizId = (localStorage.getItem('starbite_active_biz_id') || '').trim();
         let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
+        let activeCashierName = localStorage.getItem('starbite_active_cashier') || (isStaffRole ? 'Staff' : 'Admin');
         window.currentPlan = 'trial';
         let currentShopData = null;
 
         window.products = [];
+        window.workers = [];
         let sales = [], debtors = [], trash = [], cart = [];
         let allSalesForReports = [];
         let filteredProducts = [];
@@ -690,7 +774,7 @@
 
         window.loginBusiness = async () => {
             const rawCode = (document.getElementById('loginBizCode').value || '').trim().toUpperCase();
-            const code = rawCode.replace(/[^A-Z0-9_-]/g, '');
+            const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
             const pin = (document.getElementById('loginBizPin').value || '').trim();
 
             if (!code) return alert("Please enter your Business Code.");
@@ -702,8 +786,8 @@
                     if (code === 'STARBITE') {
                         await setDoc(doc(db, "shops", "STARBITE"), { 
                             name: "Starbite Shop", code: "STARBITE", pin: pin || "1234", plan: "trial",
-                            trialExpiresAt: Date.now() + (14 * 24 * 60 * 60 * 1000), createdAt: Date.now() 
-                        });
+                            trialExpiresAt: Date.now() + (14 * 24 * 60 * 60 * 1000), createdAt: Date.now(), workers: []
+                        }, { merge: true });
                     } else {
                         return alert(`❌ Business code "${code}" does not exist. Click 'Create Shop' to register!`);
                     }
@@ -725,7 +809,7 @@
         window.registerBusiness = async () => {
             const name = (document.getElementById('regBizName').value || '').trim();
             const rawCode = (document.getElementById('regBizCode').value || '').trim().toUpperCase();
-            const code = rawCode.replace(/[^A-Z0-9_-]/g, '');
+            const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
             const phone = (document.getElementById('regBizPhone').value || '').trim();
             const email = (document.getElementById('regBizEmail').value || '').trim().toLowerCase();
             const pin = (document.getElementById('regBizPin').value || '').trim() || '1234';
@@ -738,10 +822,12 @@
                 if (check.exists()) return alert(`❌ Store code "${code}" is already taken.`);
 
                 const trialExpiry = Date.now() + (14 * 24 * 60 * 60 * 1000);
-                await setDoc(doc(db, "shops", code), { name, code, phone, email, pin, plan: "trial", trialExpiresAt: trialExpiry, createdAt: Date.now() });
+                await setDoc(doc(db, "shops", code), { 
+                    name, code, phone, email, pin, plan: "trial", trialExpiresAt: trialExpiry, createdAt: Date.now(), workers: [] 
+                }, { merge: true });
 
                 const freshMarketData = { shop: { name, phone }, suppliers: [], products: [], transactions: [], needs: [], categories: [...DEFAULT_CATEGORIES], deletedIds: [], updatedAt: Date.now() };
-                await setDoc(doc(db, "shops", code, "market", "main_store"), freshMarketData);
+                await setDoc(doc(db, "shops", code, "market", "main_store"), freshMarketData, { merge: true });
                 localStorage.setItem('starbite_market_data_' + code, JSON.stringify(freshMarketData));
 
                 currentBizId = code;
@@ -764,7 +850,7 @@
 
         window.sendEmailOtpForPinReset = async () => {
             const rawCode = (document.getElementById('fpEmailBizCode').value || '').trim().toUpperCase();
-            const code = rawCode.replace(/[^A-Z0-9_-]/g, '');
+            const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
             if (!code) return alert("Please enter your Store Code.");
 
             const btn = document.getElementById('btnSendEmailOtp');
@@ -790,7 +876,9 @@
                 document.getElementById('fpMaskedEmail').innerText = masked;
 
                 const generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-                await updateDoc(doc(db, "shops", code), { recoveryOtp: generatedOtp, recoveryExpiresAt: Date.now() + (10 * 60 * 1000) });
+                await setDoc(doc(db, "shops", code), { 
+                    recoveryOtp: generatedOtp, recoveryExpiresAt: Date.now() + (10 * 60 * 1000) 
+                }, { merge: true });
 
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                     to_email: email, shop_name: shopData.name || code, store_code: code, otp_code: generatedOtp
@@ -810,7 +898,7 @@
             const enteredOtp = (document.getElementById('fpEmailOtpInput').value || '').trim();
             const newPin = (document.getElementById('fpEmailNewPin').value || '').trim();
             const rawCode = (document.getElementById('fpEmailBizCode').value || '').trim().toUpperCase();
-            const code = rawCode.replace(/[^A-Z0-9_-]/g, '');
+            const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
 
             if (!enteredOtp || enteredOtp.length < 6) return alert("Please enter the 6-digit code.");
             if (!newPin || newPin.length < 4) return alert("PIN must be at least 4 digits.");
@@ -823,7 +911,10 @@
                 if (Date.now() > data.recoveryExpiresAt) return alert("Code has expired.");
                 if (data.recoveryOtp !== enteredOtp) return alert("❌ Incorrect verification code.");
 
-                await updateDoc(doc(db, "shops", code), { pin: newPin, pinUpdatedAt: Date.now(), recoveryOtp: null, recoveryExpiresAt: null });
+                await setDoc(doc(db, "shops", code), { 
+                    pin: newPin, pinUpdatedAt: Date.now(), recoveryOtp: null, recoveryExpiresAt: null 
+                }, { merge: true });
+                
                 alert("🎉 Success! Your new PIN has been set.");
                 closeModals();
                 document.getElementById('loginBizCode').value = code;
@@ -876,47 +967,332 @@
 
         window.updateRoleUI = () => {
             const roleBadge = document.getElementById('roleBadge');
+            const cashierLbl = document.getElementById('activeCashierLabel');
             if (isStaffRole) {
                 document.body.classList.add('is-staff');
-                if (roleBadge) { roleBadge.innerText = '👷 Worker Mode'; roleBadge.style.background = '#475569'; roleBadge.style.color = '#fff'; }
+                if (roleBadge) {
+                    roleBadge.innerText = `👷 Worker: ${activeCashierName}`;
+                    roleBadge.style.background = '#475569';
+                    roleBadge.style.color = '#fff';
+                }
             } else {
                 document.body.classList.remove('is-staff');
-                if (roleBadge) { roleBadge.innerText = '👑 Admin'; roleBadge.style.background = '#37474f'; roleBadge.style.color = '#fde047'; }
+                if (roleBadge) {
+                    roleBadge.innerText = '👑 Admin';
+                    roleBadge.style.background = '#37474f';
+                    roleBadge.style.color = '#fde047';
+                }
+            }
+            if (cashierLbl) cashierLbl.innerText = isStaffRole ? activeCashierName : 'Admin';
+        };
+
+        /* Worker Management & PIN Retrieval Functions (Admin Only) */
+        window.openWorkersModal = () => {
+            document.getElementById('w-name').value = '';
+            document.getElementById('w-phone').value = '';
+            document.getElementById('w-pin').value = '';
+            document.getElementById('w-address').value = '';
+            window.renderWorkersList();
+            document.getElementById('mod-workers').style.display = 'flex';
+        };
+
+        // Uses setDoc with merge: true to avoid 'No document to update' error
+        window.saveWorker = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('w-name').value.trim();
+            const phone = document.getElementById('w-phone').value.trim();
+            const pin = document.getElementById('w-pin').value.trim();
+            const address = document.getElementById('w-address').value.trim();
+
+            if (!name || !phone || !pin) return alert("Name, Phone, and 4-digit PIN are required.");
+            if (pin.length < 4) return alert("Worker PIN must be at least 4 digits.");
+
+            const cleanBizId = (currentBizId || '').trim();
+            if (!cleanBizId) return alert("Error: No active store code found. Please re-login.");
+
+            try {
+                const workerId = 'worker_' + Date.now();
+                const newWorker = { id: workerId, name, phone, pin, address, createdAt: Date.now() };
+                const currentList = Array.isArray(window.workers) ? window.workers : [];
+                const updatedWorkers = [...currentList, newWorker];
+
+                await setDoc(doc(db, "shops", cleanBizId), {
+                    workers: updatedWorkers
+                }, { merge: true });
+
+                window.workers = updatedWorkers;
+                window.renderWorkersList();
+                alert(`✅ Worker "${name}" registered successfully!`);
+                document.getElementById('w-name').value = '';
+                document.getElementById('w-phone').value = '';
+                document.getElementById('w-pin').value = '';
+                document.getElementById('w-address').value = '';
+            } catch (err) {
+                alert("Error registering worker: " + err.message);
+            }
+        };
+
+        window.deleteWorker = async (id, name) => {
+            if (!confirm(`Remove worker profile for "${name}"?`)) return;
+            const cleanBizId = (currentBizId || '').trim();
+            try {
+                const updatedWorkers = (window.workers || []).filter(w => w.id !== id);
+                await setDoc(doc(db, "shops", cleanBizId), {
+                    workers: updatedWorkers
+                }, { merge: true });
+                window.workers = updatedWorkers;
+                window.renderWorkersList();
+            } catch (err) { 
+                alert("Error deleting worker: " + err.message); 
+            }
+        };
+
+        window.renderWorkersList = () => {
+            const listDiv = document.getElementById('workersList');
+            if (!listDiv) return;
+
+            listDiv.innerHTML = window.workers.length ? window.workers.map((w, idx) => `
+                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <b>${idx + 1}. ${esc(w.name)}</b><br>
+                        <small style="color:#64748b;">📞 ${esc(w.phone)} ${w.address ? '| 📍 ' + esc(w.address) : ''}</small><br>
+                        <span style="font-size:12px; color:#1e3a8a; font-weight:bold;">
+                            🔑 PIN: <span id="w-pin-disp-${w.id}">••••</span> 
+                            <button class="btn-blue btn-mini" type="button" onclick="window.toggleRevealWorkerPin('${w.id}', '${esc(w.pin)}')">👁️ Reveal</button>
+                        </span>
+                    </div>
+                    <div>
+                        <button class="btn-red btn-mini" onclick="window.deleteWorker('${w.id}', '${esc(w.name)}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('') : '<p style="text-align:center; color:#94a3b8; font-size:12px; padding:10px;">No registered workers yet.</p>';
+        };
+
+        window.toggleRevealWorkerPin = (id, actualPin) => {
+            const el = document.getElementById(`w-pin-disp-${id}`);
+            if (el) {
+                if (el.innerText === '••••') {
+                    el.innerText = actualPin;
+                    el.style.color = '#16a34a';
+                } else {
+                    el.innerText = '••••';
+                    el.style.color = '';
+                }
+            }
+        };
+
+        /* Cashier Shift Switcher & Worker Role Lock */
+        window.openSwitchCashierModal = () => {
+            const sel = document.getElementById('selWorkerCashier');
+            sel.innerHTML = `<option value="__admin__">👑 Shop Admin</option>` + 
+                window.workers.map(w => `<option value="${w.id}">${esc(w.name)} (Worker)</option>`).join('');
+            document.getElementById('cashierPinInput').value = '';
+            document.getElementById('mod-switch-cashier').style.display = 'flex';
+        };
+
+        window.handleCashierSelectionChange = () => {
+            document.getElementById('cashierPinInput').value = '';
+        };
+
+        window.confirmCashierLogin = () => {
+            const selVal = document.getElementById('selWorkerCashier').value;
+            const inputPin = document.getElementById('cashierPinInput').value.trim();
+
+            if (selVal === '__admin__') {
+                const adminPin = String(currentShopData?.pin || "1234").trim();
+                if (inputPin !== adminPin) return alert("❌ Incorrect Shop PIN for Admin.");
+                isStaffRole = false;
+                activeCashierName = 'Admin';
+                localStorage.setItem('starbite_is_staff', 'false');
+                localStorage.setItem('starbite_active_cashier', 'Admin');
+                window.updateRoleUI();
+                closeModals();
+                alert("👑 Admin unlocked!");
+            } else {
+                const w = window.workers.find(x => x.id === selVal);
+                if (!w) return alert("Please select a worker.");
+                if (String(w.pin).trim() !== inputPin) return alert("❌ Incorrect PIN for " + w.name);
+                isStaffRole = true;
+                activeCashierName = w.name;
+                localStorage.setItem('starbite_is_staff', 'true');
+                localStorage.setItem('starbite_active_cashier', w.name);
+                window.updateRoleUI();
+                closeModals();
+                alert(`✅ Logged in as cashier: ${w.name}`);
             }
         };
 
         window.toggleStaffRole = async () => {
             if (!isStaffRole) {
-                if (confirm("Switch this device to Worker / Staff mode? Financial numbers are hidden.")) {
-                    isStaffRole = true;
-                    localStorage.setItem('starbite_is_staff', 'true');
-                    window.updateRoleUI();
+                if (!window.workers.length) {
+                    if (confirm("No workers registered yet. Register workers first?\n(Or switch to standard Worker Mode)")) {
+                        window.openWorkersModal();
+                        return;
+                    }
                 }
+                window.openSwitchCashierModal();
             } else {
-                const inputPin = prompt("Enter Business PIN to unlock Admin mode:");
+                const inputPin = prompt("Enter Business Security PIN to unlock Admin mode:");
                 if (!inputPin) return;
                 if (inputPin.trim() === String(currentShopData?.pin || "1234").trim()) {
                     isStaffRole = false;
+                    activeCashierName = 'Admin';
                     localStorage.setItem('starbite_is_staff', 'false');
+                    localStorage.setItem('starbite_active_cashier', 'Admin');
                     window.updateRoleUI();
                     alert("👑 Admin unlocked!");
-                } else { alert("❌ Incorrect PIN."); }
+                } else {
+                    alert("❌ Incorrect PIN.");
+                }
             }
         };
 
-        function getProductCategory(p) {
-            if (p && p.category && p.category.trim() && p.category !== 'General') return p.category.trim();
-            const pName = (p && p.name ? p.name : '').toLowerCase();
-            const mktP = (marketDb.products || []).find(x => (x.name || '').trim().toLowerCase() === pName);
-            if (mktP && mktP.category && mktP.category.trim() && mktP.category !== 'General') return mktP.category.trim();
-            if (pName.includes('egg')) return 'Eggs';
-            if (pName.includes('drink') || pName.includes('pepsi') || pName.includes('coke') || pName.includes('fanta') || pName.includes('malt') || pName.includes('water')) return 'Drinks';
-            if (pName.includes('flour') || pName.includes('sugar') || pName.includes('butter') || pName.includes('yeast')) return 'Pastries Ingredients';
-            if (pName.includes('rice') || pName.includes('beans') || pName.includes('garri') || pName.includes('indomie')) return 'Foodstuffs & Grains';
-            return (p && p.category) ? p.category : 'General';
+        // Resolves product/item category robustly even if missing on item
+        function resolveItemCategory(item) {
+            if (item.category && item.category !== 'General') return item.category.trim();
+            const mp = (marketDb.products || []).find(p => (item.productId && p.id === item.productId) || ((p.name || '').trim().toLowerCase() === (item.name || '').trim().toLowerCase()));
+            if (mp && mp.category && mp.category !== 'General') return mp.category.trim();
+            const sp = (window.products || []).find(p => (p.name || '').trim().toLowerCase() === (item.name || '').trim().toLowerCase());
+            if (sp && sp.category && sp.category !== 'General') return sp.category.trim();
+            
+            const name = (item.name || '').toLowerCase();
+            if (name.includes('egg')) return 'Eggs';
+            if (name.includes('drink') || name.includes('pepsi') || name.includes('coke') || name.includes('fanta') || name.includes('malt') || name.includes('water') || name.includes('juice')) return 'Drinks';
+            if (name.includes('flour') || name.includes('sugar') || name.includes('butter') || name.includes('yeast')) return 'Pastries Ingredients';
+            if (name.includes('rice') || name.includes('beans') || name.includes('garri') || name.includes('indomie')) return 'Foodstuffs & Grains';
+            return item.category || 'General';
         }
 
-        // Execution guard prevents re-trigger loops during snapshot reconciliation
+        function getProductCategory(p) {
+            return resolveItemCategory(p);
+        }
+
+        /* Category Debt vs Remaining Stock Risk Engine - Accurate Pro-rating */
+        window.getAllCategoryDebtAlerts = () => {
+            const categoryDebts = {};
+            (marketDb.transactions || []).forEach(t => {
+                const bal = Number(t.balance || 0);
+                const tot = Number(t.total || 0);
+                if (bal > 0 && tot > 0) {
+                    const catTotalsInTx = {};
+                    (t.items || []).forEach(it => {
+                        const cat = resolveItemCategory(it);
+                        const line = Number(it.lineTotal || (Number(it.cost || 0) * Number(it.qty || 1)));
+                        catTotalsInTx[cat] = (catTotalsInTx[cat] || 0) + line;
+                    });
+
+                    Object.keys(catTotalsInTx).forEach(cat => {
+                        const catShare = catTotalsInTx[cat] / tot;
+                        categoryDebts[cat] = (categoryDebts[cat] || 0) + (bal * catShare);
+                    });
+                }
+            });
+
+            const categoryStock = {};
+            (window.products || []).forEach(p => {
+                const cat = resolveItemCategory(p);
+                if (!categoryStock[cat]) {
+                    categoryStock[cat] = { pieces: 0, value: 0, itemsPerPack: p.itemsPerPack || (cat.toLowerCase().includes('egg') ? 30 : 12) };
+                }
+                const packMultiplier = p.itemsPerPack || (cat.toLowerCase().includes('egg') ? 30 : 12);
+                const pieces = (Number(p.stock) || 0) + (Math.floor(Number(p.freezerPacks) || 0) * packMultiplier);
+                categoryStock[cat].pieces += pieces;
+                categoryStock[cat].value += (pieces * (Number(p.price) || 0));
+            });
+
+            const alerts = [];
+            Object.keys(categoryDebts).forEach(cat => {
+                const debt = Math.round(categoryDebts[cat]);
+                const stockData = categoryStock[cat] || { pieces: 0, value: 0, itemsPerPack: 12 };
+                const value = stockData.value;
+                const isEgg = cat.toLowerCase().includes('egg');
+                const packDivider = isEgg ? 30 : (stockData.itemsPerPack || 12);
+                const packs = Math.floor(stockData.pieces / packDivider);
+                const unitLabel = isEgg ? 'crates' : 'packs';
+
+                if (debt > 0 && value < debt) {
+                    alerts.push({
+                        category: cat,
+                        debt,
+                        remainingPacks: packs,
+                        remainingPieces: stockData.pieces,
+                        remainingValue: value,
+                        unitLabel
+                    });
+                }
+            });
+
+            return alerts;
+        };
+
+        window.getCategoryDebtAlert = (categoryName) => {
+            if (!categoryName) return null;
+            const targetCat = categoryName.trim().toLowerCase();
+            const alerts = window.getAllCategoryDebtAlerts();
+            return alerts.find(a => a.category.trim().toLowerCase() === targetCat) || null;
+        };
+
+        /* Displays Caution Banners & Card on Dashboard and Stock tabs */
+        window.renderDashboardDebtCaution = () => {
+            const cautionAlerts = window.getAllCategoryDebtAlerts();
+            const cautionBanner = document.getElementById('dash-category-debt-banner');
+            const cautionStockBanner = document.getElementById('stock-category-debt-banner');
+            const cautionCard = document.getElementById('d-card-caution');
+            const cautionCount = document.getElementById('d-caution-count');
+
+            if (cautionAlerts.length > 0) {
+                const bannerHtml = cautionAlerts.map(a => `
+                    <div style="margin-bottom:8px;">
+                        ⚠️ <b>CAUTION (${esc(a.category)}):</b> Unsold stock is down to <b>${a.remainingPacks} ${a.unitLabel}</b> (Worth <b class="text-green">${money(a.remainingValue)}</b>), but you owe supplier <b class="text-red">${money(a.debt)}</b>! Remaining stock cannot clear debt. Immediate supplier payment required.
+                    </div>
+                `).join('');
+                
+                if (cautionBanner) { cautionBanner.innerHTML = bannerHtml; cautionBanner.style.display = 'block'; }
+                if (cautionStockBanner) { cautionStockBanner.innerHTML = bannerHtml; cautionStockBanner.style.display = 'block'; }
+                if (cautionCard) { cautionCard.style.display = 'block'; }
+                if (cautionCount) { cautionCount.innerText = `${cautionAlerts.length} Alert${cautionAlerts.length > 1 ? 's' : ''}`; }
+            } else {
+                if (cautionBanner) cautionBanner.style.display = 'none';
+                if (cautionStockBanner) cautionStockBanner.style.display = 'none';
+                if (cautionCard) cautionCard.style.display = 'none';
+            }
+        };
+
+        window.showDebtCautionModal = () => {
+            const alerts = window.getAllCategoryDebtAlerts();
+            const list = document.getElementById('debtCautionModalList');
+            if (!list) return;
+            list.innerHTML = alerts.length ? alerts.map(a => `
+                <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:8px; padding:10px; margin-bottom:8px;">
+                    <b style="color:#b91c1c; font-size:14px;">⚠️ ${esc(a.category)} Deficit Risk</b>
+                    <div style="font-size:12.5px; color:#334155; margin-top:4px; line-height:1.5;">
+                        • Remaining Stock: <b>${a.remainingPacks} ${a.unitLabel}</b> (${a.remainingPieces} pcs)<br>
+                        • Value of Remaining Stock: <b class="text-green">${money(a.remainingValue)}</b><br>
+                        • Supplier Debt Owed: <b class="text-red">${money(a.debt)}</b><br>
+                        • <b>Deficit Gap:</b> <b class="text-red">${money(a.debt - a.remainingValue)}</b> shortfall
+                    </div>
+                </div>
+            `).join('') : '<p style="text-align:center; color:#666;">No debt risks detected.</p>';
+            document.getElementById('mod-debt-caution-details').style.display = 'flex';
+        };
+
+        window.showDeductionPopup = (title, icon, message, debtWarningHtml = '') => {
+            const modal = document.getElementById('mod-stock-deduct-notice');
+            if (!modal) return;
+            document.getElementById('sdn-title').innerText = title;
+            document.getElementById('sdn-icon').innerText = icon;
+            document.getElementById('sdn-body').innerHTML = message;
+            
+            const warnBox = document.getElementById('sdn-debt-warning');
+            if (debtWarningHtml) {
+                warnBox.innerHTML = debtWarningHtml;
+                warnBox.style.display = 'block';
+            } else {
+                warnBox.style.display = 'none';
+            }
+            modal.style.display = 'flex';
+        };
+
         let isSyncingProducts = false;
         window.syncAndRecoverAllProducts = async () => {
             if (isSyncingProducts) return;
@@ -1016,11 +1392,13 @@
                 await purgeCol("trash");
 
                 const freshMarketData = { shop: { name: currentBizId, phone: '' }, suppliers: [], products: [], transactions: [], needs: [], categories: [...DEFAULT_CATEGORIES], deletedIds: [], updatedAt: Date.now() };
-                await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), freshMarketData);
+                await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), freshMarketData, { merge: true });
                 localStorage.removeItem('starbite_market_data_' + currentBizId);
 
-                window.products = []; sales = []; debtors = []; trash = []; cart = [];
-                window.renderShopProducts(); window.renderStock(); window.renderDash(); window.renderCart(); window.renderDebtors();
+                await setDoc(doc(db, "shops", currentBizId), { workers: [] }, { merge: true });
+
+                window.products = []; window.workers = []; sales = []; debtors = []; trash = []; cart = [];
+                window.renderShopProducts(); window.renderStock(); window.renderDash(); window.renderCart(); window.renderDebtors(); window.renderWorkersList();
                 alert(`All data for ${currentBizId} cleared!`);
             } catch (err) { alert("Error: " + err.message); }
         };
@@ -1043,7 +1421,13 @@
             window.updateRoleUI();
 
             unsubShopMeta = onSnapshot(doc(db, "shops", currentBizId), (snap) => {
-                if (snap.exists()) window.updatePlanUI(snap.data());
+                if (snap.exists()) {
+                    currentShopData = snap.data();
+                    window.updatePlanUI(currentShopData);
+                    window.workers = Array.isArray(currentShopData.workers) ? currentShopData.workers : [];
+                    window.renderWorkersList();
+                    window.renderDashboardDebtCaution();
+                }
             }, err => window.showDbError(err, "ShopMeta"));
 
             unsubProducts = onSnapshot(collection(db, "shops", currentBizId, "products"), (snapshot) => {
@@ -1053,6 +1437,7 @@
                 window.renderShopProducts();
                 window.renderStock();
                 window.renderDash();
+                window.renderDashboardDebtCaution();
                 if(window.renderQuickTapGrid) window.renderQuickTapGrid();
             }, err => window.showDbError(err, "Products"));
 
@@ -1080,11 +1465,11 @@
                     document.getElementById('topShopName').innerText = `${marketDb.shop.name || currentBizId}`;
                     window.syncAndRecoverAllProducts();
                     window.renderStock();
+                    window.renderDashboardDebtCaution();
                 }
             }, err => window.showDbError(err, "Market Sync"));
         };
 
-        // Unified Total Stock check function
         function getTotalStockUnits(p) {
             const roomStock = Number(p.stock) || 0;
             const freezerPacks = Number(p.freezerPacks) || 0;
@@ -1108,6 +1493,8 @@
             document.getElementById('d-mkt-bought').innerText = totalBought.toLocaleString() + " pcs";
             document.getElementById('d-mkt-sold').innerText = totalSold.toLocaleString() + " pcs";
             document.getElementById('d-stock').innerText = filteredProducts.filter(p => getTotalStockUnits(p) <= 5).length;
+            
+            window.renderDashboardDebtCaution();
         };
 
         window.showLowStock = () => {
@@ -1233,6 +1620,8 @@
 
         window.checkout = async (type) => {
             if(cart.length === 0) return;
+            const currentCashier = isStaffRole ? (activeCashierName || 'Staff') : 'Admin';
+
             try {
                 for(const c of cart) {
                     const itemsPerPack = c.itemsPerPack || 12;
@@ -1256,20 +1645,21 @@
                 const date = new Date().toISOString();
 
                 if(type === 'cash') {
-                    await addDoc(collection(db, "shops", currentBizId, "sales"), { date, desc, items: itemsArr, total, type: 'Cash', soldBy: USER_NAME });
-                    alert("✅ Cash Sale Recorded!");
+                    await addDoc(collection(db, "shops", currentBizId, "sales"), { date, desc, items: itemsArr, total, type: 'Cash', soldBy: currentCashier });
+                    alert(`✅ Cash Sale Recorded! (Sold by: ${currentCashier})`);
                 } else {
                     const name = document.getElementById('c-name').value;
                     if(!name) return alert("Enter customer name");
-                    await addDoc(collection(db, "shops", currentBizId, "debtors"), { name, phone: document.getElementById('c-phone').value, desc, totalDebt: total, payments: [], date });
-                    await addDoc(collection(db, "shops", currentBizId, "sales"), { date, desc: `Credit Sale: ${name}`, items: itemsArr, total, type: 'Credit', soldBy: USER_NAME });
-                    alert("Added to Debtors Book!");
+                    await addDoc(collection(db, "shops", currentBizId, "debtors"), { name, phone: document.getElementById('c-phone').value, desc, totalDebt: total, payments: [], date, recordedBy: currentCashier });
+                    await addDoc(collection(db, "shops", currentBizId, "sales"), { date, desc: `Credit Sale: ${name}`, items: itemsArr, total, type: 'Credit', soldBy: currentCashier });
+                    alert(`Added to Debtors Book! (Sold by: ${currentCashier})`);
                     closeModals();
                 }
 
                 cart = [];
                 document.getElementById('payInput').value = '';
                 window.renderCart();
+                window.renderDashboardDebtCaution();
             } catch(e) { window.showDbError(e, "Checkout"); }
         };
 
@@ -1280,6 +1670,46 @@
             const sel = document.getElementById('p-category');
             if(!sel) return;
             sel.innerHTML = (marketDb.categories || DEFAULT_CATEGORIES).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        };
+
+        /* Stock Deduction & Value Notifications */
+        window.useEggCrate = async (id) => {
+            const p = (window.products || []).find(x => x.id === id);
+            if (!p) return;
+            const itemsPerCrate = p.itemsPerPack || 30;
+            const currentCrates = Math.floor((p.stock || 0) / itemsPerCrate);
+            if (currentCrates <= 0) return alert("No full crates available in room stock!");
+
+            const choice = prompt(`How many crates removed? (${currentCrates} crates available):`, "1");
+            if (!choice) return;
+            const used = parseInt(choice);
+            if (isNaN(used) || used <= 0 || used > currentCrates) return alert("Invalid count");
+
+            const remainingCrates = currentCrates - used;
+            const remainingPieces = Math.max(0, (p.stock || 0) - (used * itemsPerCrate));
+            const remainingValue = remainingPieces * (Number(p.price) || 0);
+
+            await updateDoc(doc(db, "shops", currentBizId, "products", id), {
+                stock: remainingPieces
+            });
+
+            window.renderStock();
+
+            // Run Debt Risk Analysis for Eggs
+            const risk = window.getCategoryDebtAlert(p.category || 'Eggs');
+            let debtHtml = '';
+            if (risk) {
+                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Total remaining ${risk.category} stock is worth <b>${money(risk.remainingValue)}</b>, but you owe suppliers <b>${money(risk.debt)}</b>! Stock cannot cover debt. Pay supplier immediately!`;
+            }
+
+            window.showDeductionPopup(
+                "🥚 Egg Crate Deducted",
+                "🥚",
+                `You removed <b>${used} crate(s)</b> from ${currentCrates} crates.<br>` +
+                `<b>Remaining:</b> <span class="text-blue"><b>${remainingCrates} crate(s)</b></span> ` +
+                `with total value of <b class="text-green">${money(remainingValue)}</b>.`,
+                debtHtml
+            );
         };
 
         window.transferToFreezer = async (id) => {
@@ -1294,26 +1724,33 @@
             const packs = parseInt(input);
             if (isNaN(packs) || packs <= 0 || packs > roomPacks) return alert("Invalid count");
 
-            await updateDoc(doc(db, "shops", currentBizId, "products", id), {
-                stock: Math.max(0, (p.stock || 0) - (packs * itemsPerPack)),
-                freezerPacks: (Number(p.freezerPacks) || 0) + packs
-            });
-            window.renderStock();
-        };
+            const remainingRoomPacks = roomPacks - packs;
+            const newRoomPieces = Math.max(0, (p.stock || 0) - (packs * itemsPerPack));
+            const newFreezerPacks = (Number(p.freezerPacks) || 0) + packs;
+            const totalRemainingPieces = newRoomPieces + (newFreezerPacks * itemsPerPack);
+            const remainingValue = totalRemainingPieces * (Number(p.price) || 0);
 
-        window.useEggCrate = async (id) => {
-            const p = (window.products || []).find(x => x.id === id);
-            if (!p) return;
-            const itemsPerCrate = p.itemsPerPack || 30;
-            const crates = Math.floor((p.stock || 0) / itemsPerCrate);
-            const choice = prompt(`How many crates used? (${crates} available):`, "1");
-            if (!choice) return;
-            const used = parseInt(choice);
-            if (isNaN(used) || used <= 0) return alert("Invalid count");
             await updateDoc(doc(db, "shops", currentBizId, "products", id), {
-                stock: Math.max(0, (p.stock || 0) - (used * itemsPerCrate))
+                stock: newRoomPieces,
+                freezerPacks: newFreezerPacks
             });
+
             window.renderStock();
+
+            const risk = window.getCategoryDebtAlert(p.category || 'Drinks');
+            let debtHtml = '';
+            if (risk) {
+                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Remaining ${risk.category} stock value (${money(risk.remainingValue)}) cannot cover unpaid supplier debt (${money(risk.debt)})!`;
+            }
+
+            window.showDeductionPopup(
+                "❄️ Moved to Freezer",
+                "❄️",
+                `Moved <b>${packs} pack(s)</b> into the freezer.<br>` +
+                `<b>Room:</b> ${remainingRoomPacks} pack(s) | <b>Freezer:</b> ${newFreezerPacks} pack(s)<br>` +
+                `<b>Total Value Remaining:</b> <b class="text-green">${money(remainingValue)}</b>.`,
+                debtHtml
+            );
         };
 
         window.setStockCategoryFilter = (cat) => {
@@ -1380,7 +1817,8 @@
                 });
             }
         };
-window.resetAllStocksToZero = async () => {
+
+        window.resetAllStocksToZero = async () => {
             if(!confirm("Reset ALL stock to 0?")) return;
             const backup = {};
             window.products.forEach(p => backup[p.id] = { stock: p.stock||0, initStock: p.initStock||0, freezerPacks: p.freezerPacks||0 });
@@ -1448,13 +1886,14 @@ window.resetAllStocksToZero = async () => {
             const id = document.getElementById('pay-id').value;
             const amt = parseInt(document.getElementById('pay-amt').value);
             const method = document.getElementById('pay-method').value;
+            const currentCashier = isStaffRole ? (activeCashierName || 'Staff') : 'Admin';
             if(!amt) return;
             const d = debtors.find(x => x.id === id);
             await updateDoc(doc(db, "shops", currentBizId, "debtors", id), {
-                payments: [...(d.payments || []), { date: new Date().toISOString(), amount: amt, method }]
+                payments: [...(d.payments || []), { date: new Date().toISOString(), amount: amt, method, receivedBy: currentCashier }]
             });
             await addDoc(collection(db, "shops", currentBizId, "sales"), {
-                date: new Date().toISOString(), desc: `Debt Pay: ${d.name} (${method})`, total: amt, type: 'Debt Payment', soldBy: USER_NAME
+                date: new Date().toISOString(), desc: `Debt Pay: ${d.name} (${method})`, total: amt, type: 'Debt Payment', soldBy: currentCashier
             });
             closeModals();
         };
@@ -1473,9 +1912,10 @@ window.resetAllStocksToZero = async () => {
         window.saveManualDebt = async () => {
             const name = document.getElementById('m-name').value;
             const amt = parseInt(document.getElementById('m-amt').value);
+            const currentCashier = isStaffRole ? (activeCashierName || 'Staff') : 'Admin';
             if(name && amt) {
                 await addDoc(collection(db, "shops", currentBizId, "debtors"), {
-                    name, phone: document.getElementById('m-phone').value, desc: document.getElementById('m-desc').value || "Manual", totalDebt: amt, payments: [], date: new Date().toISOString()
+                    name, phone: document.getElementById('m-phone').value, desc: document.getElementById('m-desc').value || "Manual", totalDebt: amt, payments: [], date: new Date().toISOString(), recordedBy: currentCashier
                 });
                 closeModals();
             }
@@ -1558,7 +1998,7 @@ window.resetAllStocksToZero = async () => {
                 const currentVal = staffSel.value || 'all';
                 const staffSet = new Set(['all']);
                 sales.forEach(s => { if (s.soldBy) staffSet.add(s.soldBy); });
-                staffSel.innerHTML = Array.from(staffSet).map(st => `<option value="${esc(st)}">${st === 'all' ? 'All Staff' : esc(st)}</option>`).join('');
+                staffSel.innerHTML = Array.from(staffSet).map(st => `<option value="${esc(st)}">${st === 'all' ? 'All Staff / Sellers' : esc(st)}</option>`).join('');
                 if (Array.from(staffSet).includes(currentVal)) staffSel.value = currentVal;
             }
 
@@ -1566,7 +2006,8 @@ window.resetAllStocksToZero = async () => {
             const filteredSales = sales.filter(s => chosenStaff === 'all' || s.soldBy === chosenStaff);
 
             div.innerHTML = filteredSales.map(s => `<div style="padding:8px; border-bottom:1px solid #eee;">
-                <div><b>₦${Number(s.total || 0).toLocaleString()}</b> - <small>${s.desc} (${s.type})</small><br><span style="font-size:10px; color:#999;">${new Date(s.date).toLocaleString()} • Sold by: ${esc(s.soldBy || 'Staff')}</span></div>
+                <div><b>₦${Number(s.total || 0).toLocaleString()}</b> - <small>${s.desc} (${s.type})</small><br>
+                <span style="font-size:11px; color:#64748b;">📅 ${new Date(s.date).toLocaleString()} • 👤 <b>Sold By: ${esc(s.soldBy || 'Staff')}</b></span></div>
             </div>`).join('') || '<p style="text-align:center; color:#999; font-size:12px;">No sales recorded yet.</p>';
         };
 
@@ -1603,11 +2044,14 @@ window.resetAllStocksToZero = async () => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF();
             pdf.text("STARBITE SALES REPORT", 14, 15);
+            const chosenStaff = document.getElementById('staffSelector')?.value || 'all';
+            const exportSales = sales.filter(s => chosenStaff === 'all' || s.soldBy === chosenStaff);
+
             pdf.autoTable({
-                head: [['Date', 'Description', 'Type', 'Total']],
-                body: sales.map(s => [new Date(s.date).toLocaleDateString(), s.desc, s.type, "₦" + Number(s.total || 0).toLocaleString()])
+                head: [['Date', 'Description', 'Type', 'Seller', 'Total']],
+                body: exportSales.map(s => [new Date(s.date).toLocaleDateString(), s.desc, s.type, s.soldBy || 'Staff', "₦" + Number(s.total || 0).toLocaleString()])
             });
-            pdf.save(`sales_report_${type}.pdf`);
+            pdf.save(`sales_report_${type}_${Date.now()}.pdf`);
         };
 
         window.checkAuthDisplay();
@@ -1615,4 +2059,3 @@ window.resetAllStocksToZero = async () => {
     </script>
 </body>
 </html>
-        
