@@ -62,6 +62,7 @@
         .container { padding: 15px; max-width: 100%; margin: 0 auto; }
         .card { background: white; padding: 16px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; border: 1px solid var(--border); }
         .plan-alert-banner { background: linear-gradient(90deg, #ede9fe, #f5f3ff); border: 1px solid #c4b5fd; border-radius: 10px; padding: 10px 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; color: #4c1d95; }
+        .debt-caution-box { background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 10px; padding: 12px 14px; margin-bottom: 15px; color: #991b1b; font-size: 13px; line-height: 1.5; }
         
         .bank-info-box { background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 12px; padding: 16px; margin: 15px 0; text-align: left; }
         .bank-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
@@ -195,6 +196,9 @@
                 <button class="btn-purple btn-tbl" style="margin:0;" onclick="openSubscriptionModal()">⭐ Upgrade to Premium</button>
             </div>
 
+            <!-- Caution Banner for Category Debt Risk -->
+            <div id="dash-category-debt-banner" class="debt-caution-box" style="display:none;"></div>
+
             <!-- DASHBOARD -->
             <div id="sec-dash" class="section active-section">
                 <div class="dash-grid">
@@ -314,7 +318,7 @@
             <!-- STOCK TAB -->
             <div id="sec-stock" class="section">
                 <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:gap:8px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                         <h3 style="margin:0;">📦 Shop Inventory &amp; Categorized Stock</h3>
                         <button class="btn-dark btn-tbl" id="btn-sync-prods" onclick="window.manualRecoverProducts()" style="width:auto;">🔄 Sync &amp; Recover</button>
                     </div>
@@ -368,6 +372,17 @@
             <button class="nav-btn" id="btn-debt" onclick="nav('sec-debt', this)"><span>📒</span>Debt</button>
             <button class="nav-btn" id="btn-stock" onclick="nav('sec-stock', this)"><span>📦</span>Stock</button>
             <button class="nav-btn admin-only" id="btn-hist" onclick="nav('sec-hist', this)"><span>📜</span>Hist</button>
+        </div>
+    </div>
+
+    <!-- MODAL: DEDUCTION POPUP NOTICE WITH REMAINING VALUE -->
+    <div id="mod-stock-deduct-notice" class="modal">
+        <div class="modal-content" style="max-width: 440px; text-align: center;">
+            <span style="font-size: 38px;" id="sdn-icon">📦</span>
+            <h3 style="margin: 6px 0 2px; color: #0d47a1;" id="sdn-title">Stock Deducted</h3>
+            <p style="font-size: 13.5px; color: #475569; margin: 12px 0 14px; line-height: 1.6;" id="sdn-body"></p>
+            <div id="sdn-debt-warning" style="display:none; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12.5px; color: #b91c1c; font-weight: bold; text-align: left;"></div>
+            <button class="btn-green" onclick="document.getElementById('mod-stock-deduct-notice').style.display='none'">OK, Understood</button>
         </div>
     </div>
 
@@ -1124,6 +1139,98 @@
             return (p && p.category) ? p.category : 'General';
         }
 
+        /* Category Debt vs Remaining Stock Risk Engine */
+        window.getCategoryDebtAlert = (categoryName) => {
+            if (!categoryName) return null;
+            const targetCat = categoryName.trim().toLowerCase();
+
+            let remainingPieces = 0;
+            let remainingValue = 0;
+            (window.products || []).forEach(p => {
+                const pCat = (getProductCategory(p) || '').trim().toLowerCase();
+                if (pCat === targetCat) {
+                    const packMultiplier = p.itemsPerPack || (pCat.includes('egg') ? 30 : 12);
+                    const totalPieces = (Number(p.stock) || 0) + (Math.floor(Number(p.freezerPacks) || 0) * packMultiplier);
+                    remainingPieces += totalPieces;
+                    remainingValue += (totalPieces * (Number(p.price) || 0));
+                }
+            });
+
+            let supplierDebtOwed = 0;
+            (marketDb.transactions || []).forEach(t => {
+                if (Number(t.balance || 0) > 0) {
+                    (t.items || []).forEach(it => {
+                        const itemCat = (it.category || '').trim().toLowerCase();
+                        if (itemCat === targetCat) {
+                            supplierDebtOwed += Number(t.balance || 0);
+                        }
+                    });
+                }
+            });
+
+            const isEgg = targetCat.includes('egg');
+            const packDivider = isEgg ? 30 : 12;
+            const remainingPacks = Math.floor(remainingPieces / packDivider);
+
+            if (supplierDebtOwed > 0 && remainingValue < supplierDebtOwed) {
+                return {
+                    category: categoryName,
+                    remainingPacks,
+                    remainingValue,
+                    supplierDebtOwed,
+                    unitLabel: isEgg ? 'crates' : 'packs'
+                };
+            }
+            return null;
+        };
+
+        window.renderDashboardDebtCaution = () => {
+            const banner = document.getElementById('dash-category-debt-banner');
+            if (!banner) return;
+
+            const categorySet = new Set();
+            (marketDb.categories || DEFAULT_CATEGORIES).forEach(c => categorySet.add(c));
+            (marketDb.transactions || []).forEach(t => {
+                (t.items || []).forEach(i => { if (i.category) categorySet.add(i.category); });
+            });
+
+            const alerts = [];
+            categorySet.forEach(cat => {
+                const risk = window.getCategoryDebtAlert(cat);
+                if (risk) {
+                    alerts.push(`
+                        <div style="margin-bottom:6px;">
+                            ⚠️ <b>CAUTION (${esc(risk.category)}):</b> Unsold stock is down to <b>${risk.remainingPacks} ${risk.unitLabel}</b> (Worth <b>${money(risk.remainingValue)}</b>), but you owe suppliers <b>${money(risk.supplierDebtOwed)}</b>! Remaining stock cannot clear debt. Immediate supplier payment required.
+                        </div>
+                    `);
+                }
+            });
+
+            if (alerts.length > 0) {
+                banner.innerHTML = alerts.join('');
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        };
+
+        window.showDeductionPopup = (title, icon, message, debtWarningHtml = '') => {
+            const modal = document.getElementById('mod-stock-deduct-notice');
+            if (!modal) return;
+            document.getElementById('sdn-title').innerText = title;
+            document.getElementById('sdn-icon').innerText = icon;
+            document.getElementById('sdn-body').innerHTML = message;
+            
+            const warnBox = document.getElementById('sdn-debt-warning');
+            if (debtWarningHtml) {
+                warnBox.innerHTML = debtWarningHtml;
+                warnBox.style.display = 'block';
+            } else {
+                warnBox.style.display = 'none';
+            }
+            modal.style.display = 'flex';
+        };
+
         let isSyncingProducts = false;
         window.syncAndRecoverAllProducts = async () => {
             if (isSyncingProducts) return;
@@ -1251,13 +1358,13 @@
             document.getElementById('topShopName').innerText = `${marketDb.shop.name || currentBizId}`;
             window.updateRoleUI();
 
-            // Real-time synchronization of shop meta, plan, AND workers (inside shop doc)
             unsubShopMeta = onSnapshot(doc(db, "shops", currentBizId), (snap) => {
                 if (snap.exists()) {
                     currentShopData = snap.data();
                     window.updatePlanUI(currentShopData);
                     window.workers = Array.isArray(currentShopData.workers) ? currentShopData.workers : [];
                     window.renderWorkersList();
+                    window.renderDashboardDebtCaution();
                 }
             }, err => window.showDbError(err, "ShopMeta"));
 
@@ -1268,6 +1375,7 @@
                 window.renderShopProducts();
                 window.renderStock();
                 window.renderDash();
+                window.renderDashboardDebtCaution();
                 if(window.renderQuickTapGrid) window.renderQuickTapGrid();
             }, err => window.showDbError(err, "Products"));
 
@@ -1295,6 +1403,7 @@
                     document.getElementById('topShopName').innerText = `${marketDb.shop.name || currentBizId}`;
                     window.syncAndRecoverAllProducts();
                     window.renderStock();
+                    window.renderDashboardDebtCaution();
                 }
             }, err => window.showDbError(err, "Market Sync"));
         };
@@ -1322,6 +1431,7 @@
             document.getElementById('d-mkt-bought').innerText = totalBought.toLocaleString() + " pcs";
             document.getElementById('d-mkt-sold').innerText = totalSold.toLocaleString() + " pcs";
             document.getElementById('d-stock').innerText = filteredProducts.filter(p => getTotalStockUnits(p) <= 5).length;
+            window.renderDashboardDebtCaution();
         };
 
         window.showLowStock = () => {
@@ -1486,6 +1596,7 @@
                 cart = [];
                 document.getElementById('payInput').value = '';
                 window.renderCart();
+                window.renderDashboardDebtCaution();
             } catch(e) { window.showDbError(e, "Checkout"); }
         };
 
@@ -1496,6 +1607,46 @@
             const sel = document.getElementById('p-category');
             if(!sel) return;
             sel.innerHTML = (marketDb.categories || DEFAULT_CATEGORIES).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        };
+
+        /* Stock Deduction & Value Notifications */
+        window.useEggCrate = async (id) => {
+            const p = (window.products || []).find(x => x.id === id);
+            if (!p) return;
+            const itemsPerCrate = p.itemsPerPack || 30;
+            const currentCrates = Math.floor((p.stock || 0) / itemsPerCrate);
+            if (currentCrates <= 0) return alert("No full crates available in room stock!");
+
+            const choice = prompt(`How many crates removed? (${currentCrates} crates available):`, "1");
+            if (!choice) return;
+            const used = parseInt(choice);
+            if (isNaN(used) || used <= 0 || used > currentCrates) return alert("Invalid count");
+
+            const remainingCrates = currentCrates - used;
+            const remainingPieces = Math.max(0, (p.stock || 0) - (used * itemsPerCrate));
+            const remainingValue = remainingPieces * (Number(p.price) || 0);
+
+            await updateDoc(doc(db, "shops", currentBizId, "products", id), {
+                stock: remainingPieces
+            });
+
+            window.renderStock();
+
+            // Run Debt Risk Analysis for Eggs
+            const risk = window.getCategoryDebtAlert(p.category || 'Eggs');
+            let debtHtml = '';
+            if (risk) {
+                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Total remaining ${risk.category} stock is worth <b>${money(risk.remainingValue)}</b>, but you owe suppliers <b>${money(risk.supplierDebtOwed)}</b>! Stock cannot cover debt. Pay supplier immediately!`;
+            }
+
+            window.showDeductionPopup(
+                "🥚 Egg Crate Deducted",
+                "🥚",
+                `You removed <b>${used} crate(s)</b> from ${currentCrates} crates.<br>` +
+                `<b>Remaining:</b> <span class="text-blue"><b>${remainingCrates} crate(s)</b></span> ` +
+                `with total value of <b class="text-green">${money(remainingValue)}</b>.`,
+                debtHtml
+            );
         };
 
         window.transferToFreezer = async (id) => {
@@ -1510,26 +1661,33 @@
             const packs = parseInt(input);
             if (isNaN(packs) || packs <= 0 || packs > roomPacks) return alert("Invalid count");
 
-            await updateDoc(doc(db, "shops", currentBizId, "products", id), {
-                stock: Math.max(0, (p.stock || 0) - (packs * itemsPerPack)),
-                freezerPacks: (Number(p.freezerPacks) || 0) + packs
-            });
-            window.renderStock();
-        };
+            const remainingRoomPacks = roomPacks - packs;
+            const newRoomPieces = Math.max(0, (p.stock || 0) - (packs * itemsPerPack));
+            const newFreezerPacks = (Number(p.freezerPacks) || 0) + packs;
+            const totalRemainingPieces = newRoomPieces + (newFreezerPacks * itemsPerPack);
+            const remainingValue = totalRemainingPieces * (Number(p.price) || 0);
 
-        window.useEggCrate = async (id) => {
-            const p = (window.products || []).find(x => x.id === id);
-            if (!p) return;
-            const itemsPerCrate = p.itemsPerPack || 30;
-            const crates = Math.floor((p.stock || 0) / itemsPerCrate);
-            const choice = prompt(`How many crates used? (${crates} available):`, "1");
-            if (!choice) return;
-            const used = parseInt(choice);
-            if (isNaN(used) || used <= 0) return alert("Invalid count");
             await updateDoc(doc(db, "shops", currentBizId, "products", id), {
-                stock: Math.max(0, (p.stock || 0) - (used * itemsPerCrate))
+                stock: newRoomPieces,
+                freezerPacks: newFreezerPacks
             });
+
             window.renderStock();
+
+            const risk = window.getCategoryDebtAlert(p.category || 'Drinks');
+            let debtHtml = '';
+            if (risk) {
+                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Remaining ${risk.category} stock value (${money(risk.remainingValue)}) cannot cover unpaid supplier debt (${money(risk.supplierDebtOwed)})!`;
+            }
+
+            window.showDeductionPopup(
+                "❄️ Moved to Freezer",
+                "❄️",
+                `Moved <b>${packs} pack(s)</b> into the freezer.<br>` +
+                `<b>Room:</b> ${remainingRoomPacks} pack(s) | <b>Freezer:</b> ${newFreezerPacks} pack(s)<br>` +
+                `<b>Total Value Remaining:</b> <b class="text-green">${money(remainingValue)}</b>.`,
+                debtHtml
+            );
         };
 
         window.setStockCategoryFilter = (cat) => {
