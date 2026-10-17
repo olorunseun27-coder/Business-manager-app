@@ -26,7 +26,7 @@
             --shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
         
-        /* Strict Staff Privacy: Hides financial details and admin sub-pages from workers */
+        /* Strict Staff Privacy: Controlled exclusively by Business Manager */
         body.is-staff .admin-only { display: none !important; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; user-select: none; color: var(--text); }
         *{ box-sizing: border-box; }
@@ -111,7 +111,7 @@
         </header>
 
         <div class="container">
-            <!-- Sub-Pages Navigation: Admin tabs are controlled by Business Manager -->
+            <!-- Sub-Pages Navigation: Admin tabs are controlled exclusively by Business Manager App -->
             <div class="mkt-sub-nav">
                 <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
                 <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
@@ -126,8 +126,11 @@
             <!-- SUB-PAGE 1: MARK PRODUCTS TO ORDER -->
             <div id="mkt-order" class="mkt-page active-page">
                 <div class="card">
+                    <!-- Accurate Category Debt Warning Banner -->
+                    <div id="mkt-category-debt-banner" style="display:none; background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 14px; margin-bottom:15px; color:#991b1b; font-size:13px; line-height:1.5;"></div>
+
                     <h3 style="margin-top:0;">🛒 Mark Products to Order</h3>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Cloud Synced across all phones: Total Bought, Total Sold, and Shop Available Stock.</p>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Cloud Synced across all phones: Total Bought, Total Sold, and Shop Available Stock (Room + Freezer).</p>
                     
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
                         <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="window.renderOrderGoodsList()" style="flex:2; margin:0;">
@@ -440,7 +443,7 @@
     <!-- UI Subpage Navigation Scripts -->
     <script>
         function showMktPage(pageId) {
-            // Guard: If worker mode is active, prevent opening admin-only tabs
+            // Guard: If worker mode is active in main app, prevent opening admin-only tabs
             if (document.body.classList.contains('is-staff')) {
                 const targetBtn = Array.from(document.querySelectorAll('.mkt-sub-btn')).find(b => b.getAttribute('onclick')?.includes(pageId));
                 if (targetBtn && targetBtn.classList.contains('admin-only')) {
@@ -486,7 +489,8 @@
         const app = initializeApp(shopConfig);
         const db = getFirestore(app);
 
-        let currentBizId = localStorage.getItem('starbite_active_biz_id') || '';
+        // Sanitize store code to prevent whitespace path bugs
+        let currentBizId = (localStorage.getItem('starbite_active_biz_id') || '').trim();
         let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
 
         if (!currentBizId) {
@@ -516,8 +520,7 @@
         const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
         const supplier = id => (marketDb.suppliers || []).find(x => x.id === id);
 
-        // Controlled exclusively from Business Manager App:
-        // Sets/unsets .is-staff on body, displaying or hiding all Admin tabs & financial elements
+        // Role UI: Controlled exclusively from Business Manager App
         window.updateRoleUI = () => {
             isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
             if (isStaffRole) {
@@ -531,7 +534,7 @@
             }
         };
 
-        // Listen for role changes from main shop across tabs, history, and page returns
+        // Real-time synchronization of role mode across tabs, history, and page returns
         window.addEventListener('storage', (e) => {
             if (e.key === 'starbite_is_staff') {
                 window.updateRoleUI();
@@ -594,6 +597,7 @@
             } catch(e) { window.showDbError(e, "Market Sync"); }
         };
 
+        // Unified Stock Calculation: Considers room stock + freezer units
         window.getProductLiveStats = (prod) => {
             if(!prod) return { boughtUnits: 0, soldUnits: 0, availableUnits: 0, shopProd: null };
             const pName = (prod.name || '').trim().toLowerCase();
@@ -632,6 +636,67 @@
             return { boughtUnits, soldUnits, availableUnits, shopProd };
         };
 
+        /* Accurately Pro-rates Category Debt to avoid multi-item invoice duplication */
+        window.renderCategoryDebtCaution = () => {
+            const banner = document.getElementById('mkt-category-debt-banner');
+            if (!banner) return;
+
+            const categoryDebts = {};
+            (marketDb.transactions || []).forEach(t => {
+                const bal = Number(t.balance || 0);
+                const tot = Number(t.total || 0);
+                if (bal > 0 && tot > 0) {
+                    const catTotalsInTx = {};
+                    (t.items || []).forEach(it => {
+                        const cat = it.category || 'General';
+                        const line = Number(it.lineTotal || (Number(it.cost || 0) * Number(it.qty || 1)));
+                        catTotalsInTx[cat] = (catTotalsInTx[cat] || 0) + line;
+                    });
+
+                    Object.keys(catTotalsInTx).forEach(cat => {
+                        const catShare = catTotalsInTx[cat] / tot;
+                        categoryDebts[cat] = (categoryDebts[cat] || 0) + (bal * catShare);
+                    });
+                }
+            });
+
+            const categoryStockValue = {};
+            const categoryRemainingPacks = {};
+            (marketDb.products || []).forEach(p => {
+                const cat = p.category || 'General';
+                const stats = window.getProductLiveStats(p);
+                const packMultiplier = Number(p.packQty) || (cat.toLowerCase().includes('egg') ? 30 : 12);
+                const remainingUnits = stats.availableUnits;
+                const value = remainingUnits * (Number(p.sell) || 0);
+                
+                categoryStockValue[cat] = (categoryStockValue[cat] || 0) + value;
+                categoryRemainingPacks[cat] = (categoryRemainingPacks[cat] || 0) + Math.floor(remainingUnits / packMultiplier);
+            });
+
+            const warnings = [];
+            Object.keys(categoryDebts).forEach(cat => {
+                const debt = Math.round(categoryDebts[cat]);
+                const value = categoryStockValue[cat] || 0;
+                const packs = categoryRemainingPacks[cat] || 0;
+                const unitLabel = cat.toLowerCase().includes('egg') ? 'crates' : 'packs';
+
+                if (debt > 0 && value < debt) {
+                    warnings.push(`
+                        <div style="margin-bottom:6px;">
+                            ⚠️ <b>CAUTION (${cat}):</b> Unsold stock is down to <b>${packs} ${unitLabel}</b> (Worth <b>${money(value)}</b>), but you owe supplier <b>${money(debt)}</b>! Remaining stock cannot clear debt. Immediate supplier payment required.
+                        </div>
+                    `);
+                }
+            });
+
+            if (warnings.length > 0) {
+                banner.innerHTML = warnings.join('');
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        };
+
         window.renderOrderGoodsList = () => {
             const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
             const cat = document.getElementById('orderCategoryFilter')?.value;
@@ -664,6 +729,7 @@
             }).join('') : '<tr><td colspan="11" style="text-align:center; padding:15px; color:#999;">No products registered in catalog.</td></tr>';
 
             window.updateLiveOrderBar();
+            window.renderCategoryDebtCaution();
         };
 
         window.handleOrderCheckClick = (id, chk) => {
@@ -1008,6 +1074,7 @@
             } catch(e) { window.showDbError(e, "Delete Purchase"); }
         };
 
+        /* Fine-grained Edit/Delete for Items inside Purchases */
         window.openEditGoodsBought = (txId, itemIdx) => {
             const t = (marketDb.transactions || []).find(x => x.id === txId);
             if (!t || !t.items || !t.items[itemIdx]) return;
@@ -1258,6 +1325,7 @@
             alert("Payment recorded!");
             window.renderPayments();
             window.renderMarketHistory();
+            window.renderCategoryDebtCaution();
         };
 
         window.renderSuppliers = () => {
@@ -1419,7 +1487,7 @@
                     const oldNameLower = (oldProd.name || '').trim().toLowerCase();
                     marketDb.products[existingIdx] = { ...marketDb.products[existingIdx], name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() };
 
-                    // Synchronize updates directly to Shop POS product document
+                    // Sync changes directly into the shop POS product doc
                     const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === oldNameLower);
                     if (matchShop) {
                         try {
@@ -1639,6 +1707,7 @@
 
         window.renderAllMarketViews = () => {
             window.populateSupplierSelects();
+            window.renderCategoryDebtCaution();
             window.renderOrderGoodsList();
             window.renderNeeds();
             window.renderMarketHistory();
@@ -1676,6 +1745,7 @@
             }
         };
 
+        // Real-Time Listeners
         window.updateRoleUI();
 
         onSnapshot(doc(db, "shops", currentBizId), (snap) => {
@@ -1715,4 +1785,3 @@
     </script>
 </body>
 </html>
-
