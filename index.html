@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>STARBITE - Cloud Shop Manager</title>
     
     <!-- External Libraries -->
@@ -15,117 +15,274 @@
     
     <style>
         :root {
-            --primary: #0d47a1;
-            --market-pri: #4f46e5;
-            --bg: #f4f6f8;
-            --card: #fff;
-            --text: #172033;
-            --muted: #667085;
-            --border: #e4e7ec;
-            --green: #12b76a;
-            --red: #f04438;
-            --orange: #f79009;
-            --purple: #7c3aed;
-            --shadow: 0 4px 15px rgba(0,0,0,0.06);
+            --primary: #1e3a8a;
+            --primary-hover: #172554;
+            --accent: #4f46e5;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --green: #10b981;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --purple: #8b5cf6;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(15,23,42,0.08);
+            --shadow-lg: 0 12px 24px rgba(15,23,42,0.15);
         }
         
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
         body.is-staff .admin-only { display: none !important; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; user-select: none; color: var(--text); }
-        *{ box-sizing: border-box; }
         
-        #app-error-banner { display: none; background: #dc3545; color: white; padding: 12px 16px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 99999; font-size: 13px; line-height: 1.5; }
-        
-        /* AUTH */
-        #view-auth { display: flex; min-height: 100vh; background: linear-gradient(135deg, #0d47a1 0%, #1e1b4b 100%); align-items: center; justify-content: center; padding: 20px; }
-        .auth-container { background: #ffffff; width: 100%; max-width: 440px; border-radius: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); padding: 30px 25px; text-align: center; }
-        .auth-brand-icon { font-size: 44px; margin-bottom: 5px; display: inline-block; }
-        .auth-title { font-size: 22px; font-weight: 800; color: #0d47a1; margin: 0 0 6px 0; }
-        .auth-subtitle { font-size: 13px; color: #64748b; margin-bottom: 22px; }
-        .auth-tabs { display: flex; background: #e2e8f0; border-radius: 10px; padding: 4px; margin-bottom: 20px; gap: 4px; }
-        .auth-tab-btn { flex: 1; padding: 9px; font-size: 13px; font-weight: 700; border: none; background: transparent; border-radius: 8px; cursor: pointer; color: #475569; transition: 0.2s; margin-bottom: 0; }
-        .auth-tab-btn.active { background: #ffffff; color: #0d47a1; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-        .auth-plan-preview { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 12px; margin-top: 15px; font-size: 11.5px; color: #334155; text-align: left; }
-        
+        #app-error-banner { 
+            display: none; 
+            background: var(--red); 
+            color: #fff; 
+            padding: 10px 16px; 
+            text-align: center; 
+            font-size: 13px; 
+            font-weight: 600; 
+            position: sticky; 
+            top: 0; 
+            z-index: 99999; 
+            box-shadow: var(--shadow-sm); 
+        }
+
+        /* Modern Toast System */
+        #toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .app-toast {
+            pointer-events: auto;
+            background: #1e293b;
+            color: white;
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 340px;
+            border-left: 4px solid var(--primary);
+        }
+        .app-toast.success { border-left-color: var(--green); }
+        .app-toast.error { border-left-color: var(--red); }
+        .app-toast.info { border-left-color: var(--orange); }
+        @keyframes toastIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* AUTH VIEW */
+        #view-auth { 
+            display: flex; 
+            min-height: 100vh; 
+            background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #1e3a8a 100%); 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
+        }
+        .auth-container { 
+            background: var(--card-bg); 
+            width: 100%; 
+            max-width: 420px; 
+            border-radius: 20px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); 
+            padding: 32px 28px; 
+            text-align: center; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+        .auth-brand-icon { font-size: 44px; margin-bottom: 6px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+        .auth-title { font-size: 24px; font-weight: 800; color: var(--primary); margin: 0 0 6px 0; letter-spacing: -0.5px; }
+        .auth-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+        .auth-tabs { display: flex; background: #f1f5f9; border-radius: 12px; padding: 4px; margin-bottom: 20px; gap: 4px; border: 1px solid #e2e8f0; }
+        .auth-tab-btn { flex: 1; padding: 10px; font-size: 13px; font-weight: 700; border: none; background: transparent; border-radius: 9px; cursor: pointer; color: #64748b; transition: all 0.2s ease; margin-bottom: 0; }
+        .auth-tab-btn.active { background: #ffffff; color: var(--primary); box-shadow: var(--shadow-sm); }
+        .auth-plan-preview { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-sm); padding: 12px; margin-top: 15px; font-size: 12px; color: #475569; text-align: left; line-height: 1.5; }
+
         /* APP VIEW */
-        #view-app { display: none; padding-bottom: 80px; }
-        .header { background: linear-gradient(135deg, #0d47a1, #1565c0); color: white; padding: 12px 16px; font-size: 17px; font-weight: bold; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 10px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
-        .header-brand { display: flex; align-items: center; gap: 8px; }
+        #view-app { display: none; padding-bottom: 84px; }
+        .header { 
+            background: #ffffff; 
+            color: var(--text-main); 
+            padding: 12px 18px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 50; 
+            box-shadow: var(--shadow-sm); 
+            border-bottom: 1px solid var(--border);
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+        }
+        .header-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; color: var(--primary); }
         .header-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .top-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-        .badge-live { background: #12b76a; color: white; }
-        .badge-syncing { background: #f79009; color: white; }
-        .badge-plan-trial { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; font-weight: 700; }
-        .badge-plan-prem { background: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 800; }
-        .badge-role { background: #37474f; color: #fde047; }
-        .badge-logout { background: rgba(255,255,255,0.2); color: white; }
+        .top-badge { padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: 0.15s; }
+        .badge-live { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .badge-syncing { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-plan-trial { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .badge-plan-prem { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; font-weight: 800; }
+        .badge-role { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+        .badge-logout { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         
-        .container { padding: 15px; max-width: 100%; margin: 0 auto; }
-        .card { background: white; padding: 16px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; border: 1px solid var(--border); }
-        .plan-alert-banner { background: linear-gradient(90deg, #ede9fe, #f5f3ff); border: 1px solid #c4b5fd; border-radius: 10px; padding: 10px 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; color: #4c1d95; }
-        .debt-caution-box { background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 10px; padding: 12px 14px; margin-bottom: 15px; color: #991b1b; font-size: 13px; line-height: 1.5; }
+        .container { padding: 16px; max-width: 1200px; margin: 0 auto; }
+        .card { background: var(--card-bg); padding: 18px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 16px; border: 1px solid var(--border); }
+        .plan-alert-banner { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; color: #6b21a8; }
+        .debt-caution-box { background: #fff1f2; border: 1.5px solid #fda4af; border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px; color: #9f1239; font-size: 13px; line-height: 1.5; }
         
-        .bank-info-box { background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 12px; padding: 16px; margin: 15px 0; text-align: left; }
-        .bank-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
-        .bank-info-row b { color: #0d47a1; }
+        .bank-info-box { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 18px; margin: 16px 0; text-align: left; }
+        .bank-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13.5px; }
+        .bank-info-row b { color: var(--primary); }
 
-        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-        .dash-card { background: #fff; padding: 14px; border-radius: 10px; text-align: center; border: 1px solid #eee; cursor: pointer; transition: 0.2s; }
-        .dash-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
-        .dash-num { font-size: 20px; font-weight: bold; display: block; margin-bottom: 4px; }
-        .dash-label { font-size: 11px; color: #777; text-transform: uppercase; font-weight: 600; }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .dash-card { background: #fff; padding: 16px 14px; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sm); }
+        .dash-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
+        .dash-num { font-size: 22px; font-weight: 800; display: block; margin-bottom: 4px; letter-spacing: -0.5px; }
+        .dash-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
         
-        .text-green { color: #28a745; } .text-red { color: #dc3545; } .text-blue { color: #007bff; } .text-orange { color: #e65100; } .text-purple { color: #7c3aed; }
+        .text-green { color: #059669; } .text-red { color: #dc2626; } .text-blue { color: #2563eb; } .text-orange { color: #d97706; } .text-purple { color: #7c3aed; }
         
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
-        thead { background: #343a40; color: white; }
-        th { padding: 11px 9px; text-align: left; font-size: 12px; font-weight: 600; white-space: nowrap; }
-        td { padding: 10px 9px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
-        tr:nth-child(even) { background-color: #fafbfc; }
+        thead { background: #f8fafc; color: #334155; border-bottom: 1px solid var(--border); }
+        th { padding: 12px 10px; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f8fafc; }
         
-        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 10px; box-sizing: border-box; background: #fafafa; font-family: inherit; }
-        input:focus, select:focus, textarea:focus { border-color: #0d47a1; outline: none; background: white; }
-        button { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; color: white; margin-bottom: 5px; transition: 0.2s; font-family: inherit; }
-        .btn-green { background: #2e7d32; } .btn-blue { background: #1565c0; } .btn-red { background: #c62828; } .btn-orange { background: #ef6c00; } .btn-dark { background: #37474f; } .btn-whatsapp { background: #25d366; color: white; }
-        .btn-purple { background: #7c3aed; }
-        .btn-tbl { padding: 5px 9px; font-size: 11px; border-radius: 4px; margin: 2px; width: auto; display: inline-block; }
-        .btn-mini { padding: 3px 8px; width: auto; display: inline-block; margin: 0 2px; border-radius: 4px; font-size: 12px; }
+        input, select, textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14.5px; margin-bottom: 10px; box-sizing: border-box; background: #fff; color: var(--text-main); font-family: inherit; transition: border-color 0.15s ease; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+        button { width: 100%; padding: 12px 16px; border: none; border-radius: var(--radius-sm); font-size: 14.5px; font-weight: 600; cursor: pointer; color: white; margin-bottom: 6px; transition: all 0.15s ease; font-family: inherit; display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
+        button:active { transform: scale(0.985); }
+        .btn-green { background: #059669; } .btn-green:hover { background: #047857; }
+        .btn-blue { background: #1e3a8a; } .btn-blue:hover { background: #172554; }
+        .btn-red { background: #dc2626; } .btn-red:hover { background: #b91c1c; }
+        .btn-orange { background: #d97706; } .btn-orange:hover { background: #b45309; }
+        .btn-dark { background: #334155; } .btn-dark:hover { background: #1e293b; }
+        .btn-whatsapp { background: #16a34a; color: white; }
+        .btn-purple { background: #7c3aed; } .btn-purple:hover { background: #6d28d9; }
+        .btn-tbl { padding: 6px 12px; font-size: 12px; border-radius: 6px; margin: 2px; width: auto; font-weight: 600; }
+        .btn-mini { padding: 4px 8px; width: auto; display: inline-block; margin: 0 2px; border-radius: 6px; font-size: 12px; font-weight: 600; }
         
-        .badge { font-size: 10px; padding: 4px 8px; border-radius: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; text-align: center; }
-        .bg-full { background: #d4edda; color: #155724; } .bg-over { background: #f8d7da; color: #721c24; }
+        .badge { font-size: 10.5px; padding: 4px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; display: inline-block; text-align: center; }
+        .bg-full { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .bg-over { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
-        .category-stock-box { border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 16px; background: #fff; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .category-stock-header { background: #f8fafc; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-        .category-stock-title { font-size: 15px; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; gap: 6px; }
+        .category-stock-box { border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 16px; background: #fff; overflow: hidden; box-shadow: var(--shadow-sm); }
+        .category-stock-header { background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .category-stock-title { font-size: 14.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
         
-        .cat-chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; background: #e2e8f0; color: #334155; border: none; width: auto; margin: 0; white-space: nowrap; flex: none; }
-        .cat-chip.active { background: #0d47a1; color: white; }
+        .cat-chip { padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 600; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid var(--border); width: auto; margin: 0; white-space: nowrap; flex: none; transition: 0.15s; }
+        .cat-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .cashier-bar { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .cashier-bar { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 500; }
 
-        /* Navigation */
-        .nav { display: flex; justify-content: space-around; background: #fff; padding: 8px 0; position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #ccc; z-index: 9999; box-shadow: 0 -2px 6px rgba(0,0,0,0.08); }
-        .nav-btn { background: none; border: none; color: #777; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; padding: 2px 0; margin: 0; width: auto; text-decoration: none; cursor: pointer; }
-        .nav-btn.active { color: #0d47a1; }
-        .section { display: none; } .active-section { display: block; }
+        /* Modern Bottom Navigation */
+        .nav { 
+            display: flex; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+            background: #ffffff; 
+            padding: 6px 10px; 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            border-top: 1px solid var(--border); 
+            z-index: 9999; 
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.06); 
+            gap: 4px;
+        }
+        .nav::-webkit-scrollbar { display: none; }
+        .nav-btn { 
+            background: none; 
+            border: none; 
+            color: #64748b; 
+            font-size: 11px; 
+            font-weight: 700; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 4px 10px; 
+            margin: 0; 
+            width: auto; 
+            min-width: 56px;
+            flex-shrink: 0;
+            text-decoration: none; 
+            cursor: pointer; 
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+        }
+        .nav-btn.active { color: var(--primary); background: #f1f5f9; }
+        .section { display: none; animation: fadeIn 0.15s ease-out; }
+        .active-section { display: block; }
+        @keyframes fadeIn { from { opacity: 0.85; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
         
-        .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
         @media(max-width: 600px){ .pricing-grid { grid-template-columns: 1fr; } }
-        .plan-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; }
-        .plan-card.featured { border-color: #7c3aed; background: #faf5ff; position: relative; }
+        .plan-card { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; text-align: center; }
+        .plan-card.featured { border: 2px solid var(--purple); background: #faf5ff; position: relative; }
         .plan-card h3 { margin: 0 0 6px 0; }
-        .plan-price { font-size: 22px; font-weight: 800; margin: 10px 0; }
-        .plan-features { list-style: none; padding: 0; margin: 12px 0; font-size: 12px; text-align: left; line-height: 1.8; color: #475569; }
+        .plan-price { font-size: 24px; font-weight: 800; margin: 10px 0; letter-spacing: -0.5px; }
+        .plan-features { list-style: none; padding: 0; margin: 14px 0; font-size: 12px; text-align: left; line-height: 1.8; color: #475569; }
 
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:99999; align-items:center; justify-content:center; }
-        .modal-content { background:white; padding:20px; border-radius: 14px; width:92%; max-width: 500px; animation: popUp 0.25s; max-height: 90vh; overflow-y: auto; }
-        @keyframes popUp { from {transform: scale(0.92); opacity:0;} to {transform: scale(1); opacity:1;} }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); backdrop-filter: blur(2px); z-index:99999; align-items:center; justify-content:center; }
+        .modal-content { background:white; padding:22px; border-radius: 16px; width:92%; max-width: 500px; animation: popUp 0.2s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+        @keyframes popUp { from {transform: scale(0.96); opacity:0;} to {transform: scale(1); opacity:1;} }
+
+        /* Master Deployed Tab Container */
+        .custom-tab-frame-wrapper {
+            background: #fff;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+        }
+        .custom-tab-header {
+            background: #f8fafc;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .custom-tab-frame {
+            width: 100%;
+            height: 78vh;
+            border: none;
+            display: block;
+            background: #ffffff;
+        }
     </style>
 </head>
 
 <body>
 
     <div id="app-error-banner"></div>
+    <div id="toast-container"></div>
     
     <!-- AUTH SCREEN -->
     <div id="view-auth">
@@ -144,14 +301,14 @@
                 <input type="password" id="loginBizPin" placeholder="Security PIN" maxlength="8" style="text-align:center;">
                 <button class="btn-blue" onclick="window.loginBusiness()">🔓 Log In to Shop</button>
                 
-                <div style="margin-top:12px; text-align:center;">
-                    <a href="javascript:void(0)" onclick="window.openEmailForgotPinModal()" style="font-size:12px; color:#ea580c; font-weight:bold; text-decoration:none;">
+                <div style="margin-top:14px; text-align:center;">
+                    <a href="javascript:void(0)" onclick="window.openEmailForgotPinModal()" style="font-size:12.5px; color:#ea580c; font-weight:bold; text-decoration:none;">
                         🔑 Forgot PIN? Reset via Email
                     </a>
                 </div>
 
-                <p style="font-size:12px; color:#64748b; margin-top:14px;">
-                    Don't have a business code? <a href="javascript:void(0)" onclick="switchAuthMode('register')" style="color:#0d47a1; font-weight:bold;">Sign Up Here</a>
+                <p style="font-size:12px; color:#64748b; margin-top:16px;">
+                    Don't have a business code? <a href="javascript:void(0)" onclick="switchAuthMode('register')" style="color:#1e3a8a; font-weight:bold;">Sign Up Here</a>
                 </p>
             </div>
 
@@ -167,9 +324,9 @@
                     Instant access to sales, stock management, and cloud backup. Upgrade to Premium anytime for full Market Buyer &amp; WhatsApp features!
                 </div>
                 
-                <button class="btn-green" style="margin-top:12px;" onclick="window.registerBusiness()">✨ Register &amp; Start Trial</button>
-                <p style="font-size:12px; color:#64748b; margin-top:14px;">
-                    Already have a shop? <a href="javascript:void(0)" onclick="switchAuthMode('login')" style="color:#0d47a1; font-weight:bold;">Log In Here</a>
+                <button class="btn-green" style="margin-top:14px;" onclick="window.registerBusiness()">✨ Register &amp; Start Trial</button>
+                <p style="font-size:12px; color:#64748b; margin-top:16px;">
+                    Already have a shop? <a href="javascript:void(0)" onclick="switchAuthMode('login')" style="color:#1e3a8a; font-weight:bold;">Log In Here</a>
                 </p>
             </div>
         </div>
@@ -196,11 +353,11 @@
                 <button class="btn-purple btn-tbl" style="margin:0;" onclick="openSubscriptionModal()">⭐ Upgrade to Premium</button>
             </div>
 
+            <!-- Caution Banner for Category Debt Risk -->
+            <div id="dash-category-debt-banner" class="debt-caution-box" style="display:none;"></div>
+
             <!-- DASHBOARD -->
             <div id="sec-dash" class="section active-section">
-                <!-- Real-time Caution Banner on Dashboard -->
-                <div id="dash-category-debt-banner" class="debt-caution-box" style="display:none;"></div>
-
                 <div class="dash-grid">
                     <div class="dash-card admin-only">
                         <span class="dash-num text-green" id="d-today">₦0</span>
@@ -209,11 +366,6 @@
                     <div class="dash-card admin-only">
                         <span class="dash-num text-red" id="d-owed">₦0</span>
                         <span class="dash-label">Total Debt Owed</span>
-                    </div>
-                    <!-- Tap-able Caution Warning Card on Dashboard -->
-                    <div class="dash-card" id="d-card-caution" onclick="runIf(window.showDebtCautionModal)" style="border: 1.5px solid #f87171; background: #fff5f5; display:none;">
-                        <span class="dash-num text-red" id="d-caution-count">0</span>
-                        <span class="dash-label text-red">⚠️ Debt Caution (Tap)</span>
                     </div>
                     <div class="dash-card" onclick="runIf(window.showLowStock)">
                         <span class="dash-num text-blue" id="d-stock">0</span>
@@ -238,15 +390,15 @@
                 </div>
 
                 <!-- Admin Worker Management Bar -->
-                <div class="card admin-only" style="margin-top:15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div class="card admin-only" style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <div>
-                        <h4 style="margin:0; color:#0d47a1;">👥 Worker Staff Management</h4>
-                        <p style="font-size:12px; color:#667085; margin:3px 0 0;">Register worker profiles, manage personal PINs, and retrieve forgotten worker credentials.</p>
+                        <h4 style="margin:0; color:var(--primary);">👥 Worker Staff Management</h4>
+                        <p style="font-size:12px; color:var(--text-muted); margin:3px 0 0;">Register worker profiles, manage personal PINs, and retrieve forgotten worker credentials.</p>
                     </div>
-                    <button class="btn-blue" style="width:auto; padding:8px 14px; margin:0;" onclick="window.openWorkersModal()">👥 Manage Workers &amp; PINs</button>
+                    <button class="btn-blue" style="width:auto; padding:9px 15px; margin:0;" onclick="window.openWorkersModal()">👥 Manage Workers &amp; PINs</button>
                 </div>
 
-                <div class="card admin-only" style="border: 1px solid #fecaca; background: #fff5f5; margin-top: 15px;">
+                <div class="card admin-only" style="border: 1px solid #fecaca; background: #fff5f5; margin-top: 16px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
                             <h4 style="margin: 0 0 4px 0; color: #b91c1c;">⚠️ Complete App &amp; Cloud Reset</h4>
@@ -256,42 +408,41 @@
                     </div>
                 </div>
 
-                <div style="text-align:center; margin-top:20px; color:#777; font-size:12px;">Multi-Tenant Cloud Database: Real-Time Synced Per Business</div>
+                <div style="text-align:center; margin-top:20px; color:#94a3b8; font-size:12px;">Multi-Tenant Cloud Database: Real-Time Synced Per Business</div>
             </div>
 
             <!-- SELL TAB -->
             <div id="sec-sell" class="section">
-                <!-- Cashier indicator: stamps sales to the active worker -->
                 <div class="cashier-bar">
-                    <span>👤 Active Seller: <b id="activeCashierLabel" style="color:#0d47a1;">Admin</b></span>
-                    <button class="btn-dark btn-mini" onclick="window.openSwitchCashierModal()" style="padding:4px 8px;">🔄 Switch Seller</button>
+                    <span>👤 Active Seller: <b id="activeCashierLabel" style="color:var(--primary);">Admin</b></span>
+                    <button class="btn-dark btn-mini" onclick="window.openSwitchCashierModal()" style="padding:4px 10px;">🔄 Switch Seller</button>
                 </div>
 
                 <div class="card">
-                    <h4 style="margin-top:0; color:#555;">⚡ Quick Add (Freezer stock only)</h4>
-                    <div id="quickTapGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap:8px; margin-bottom:15px;"></div>
+                    <h4 style="margin-top:0; color:#475569;">⚡ Quick Add (Freezer stock only)</h4>
+                    <div id="quickTapGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap:8px; margin-bottom:15px;"></div>
                     
-                    <div style="display:flex; gap:5px;">
+                    <div style="display:flex; gap:6px;">
                         <input type="text" id="search" placeholder="🔍 Search product..." onkeyup="runIf(window.renderShopProducts)">
-                        <button style="width:50px; background:#1565c0; margin:0;" onclick="runIf(window.startVoiceSearch)">🎤</button>
-                        <button style="width:50px; background:#666; margin:0;" onclick="window.startScan('search')">📷</button>
+                        <button style="width:50px; background:#1e3a8a; margin:0;" onclick="runIf(window.startVoiceSearch)">🎤</button>
+                        <button style="width:50px; background:#475569; margin:0;" onclick="window.startScan('search')">📷</button>
                     </div>
                     <div id="prodList" style="max-height: 180px; overflow-y: auto;"></div>
                     <div style="display:flex; gap:10px; margin-top:10px;">
-                        <input type="number" id="qty" placeholder="Qty" style="width: 80px;">
+                        <input type="number" id="qty" placeholder="Qty" style="width: 85px;">
                         <button class="btn-green" onclick="runIf(window.addToCart)">Add</button>
                     </div>
                     <input type="hidden" id="selIndex">
                 </div>
 
                 <div class="card">
-                    <h3>🛒 Cart (Total: ₦<span id="cartTotal">0</span>)</h3>
+                    <h3 style="margin-top:0;">🛒 Cart (Total: ₦<span id="cartTotal">0</span>)</h3>
                     <div id="cartList"></div>
-                    <div style="background:#37474f; color:white; padding:10px; border-radius:8px; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Cash Given:</span>
-                        <input type="number" id="payInput" placeholder="0" style="width:100px; padding:5px; margin:0; text-align:right;" onkeyup="runIf(window.calcChange)">
+                    <div style="background:#0f172a; color:white; padding:12px; border-radius:var(--radius-sm); margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:13.5px; font-weight:600;">Cash Given:</span>
+                        <input type="number" id="payInput" placeholder="0" style="width:110px; padding:6px 10px; margin:0; text-align:right; font-weight:bold; background:#1e293b; color:#fff; border-color:#334155;" onkeyup="runIf(window.calcChange)">
                     </div>
-                    <div id="changeTxt" style="text-align:right; font-weight:bold; margin-top:5px; color:#2e7d32;">Change: ₦0</div>
+                    <div id="changeTxt" style="text-align:right; font-weight:bold; margin-top:8px; color:#059669; font-size:14px;">Change: ₦0</div>
                     <div style="display:flex; gap:10px; margin-top:15px;">
                         <button class="btn-blue" onclick="runIf(window.checkout, 'cash')">💵 Cash Sale</button>
                         <button class="btn-orange" onclick="openCreditModal()">📒 Credit Sale</button>
@@ -306,9 +457,9 @@
             <!-- DEBT TAB -->
             <div id="sec-debt" class="section">
                 <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                         <h3 style="margin:0;">📒 Debt Records</h3>
-                        <button class="btn-dark btn-tbl admin-only" style="font-size:14px; padding:8px;" onclick="openManualDebt()">+ Add Old Debt</button>
+                        <button class="btn-dark btn-tbl admin-only" style="font-size:13px; padding:8px 12px;" onclick="openManualDebt()">+ Add Old Debt</button>
                     </div>
                     <input type="text" id="debtSearch" placeholder="🔍 Search name..." onkeyup="runIf(window.renderDebtors)">
                     <div class="table-responsive">
@@ -327,22 +478,20 @@
                         <h3 style="margin:0;">📦 Shop Inventory &amp; Categorized Stock</h3>
                         <button class="btn-dark btn-tbl" id="btn-sync-prods" onclick="window.manualRecoverProducts()" style="width:auto;">🔄 Sync &amp; Recover</button>
                     </div>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Drinks, Eggs, and groceries track their own independent available stock. Transfers to freezer auto-deduct from room stock.</p>
-
-                    <div id="stock-category-debt-banner" class="debt-caution-box" style="display:none;"></div>
+                    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Drinks, Eggs, and groceries track their own independent available stock. Transfers to freezer auto-deduct from room stock.</p>
 
                     <input type="text" id="stockSearch" placeholder="🔍 Find any product by name..." onkeyup="window.renderStock()" style="margin-bottom:10px;">
                     
-                    <div style="display:flex; gap:10px; margin-bottom:12px;">
-                        <button class="btn-blue admin-only" style="margin:0;" onclick="openProdModal()">+ New Product</button>
-                        <button class="btn-red admin-only" style="margin:0; font-size:13px;" onclick="runIf(window.resetAllStocksToZero)">⚠️ Reset Stocks to 0</button>
-                        <button class="btn-green admin-only" style="margin:0; font-size:13px;" onclick="runIf(window.restoreAllStocks)">↩️ Restore Stocks</button>
+                    <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                        <button class="btn-blue admin-only" style="margin:0; width:auto; flex:1;" onclick="openProdModal()">+ New Product</button>
+                        <button class="btn-red admin-only" style="margin:0; width:auto; font-size:13px; flex:1;" onclick="runIf(window.resetAllStocksToZero)">⚠️ Reset Stocks to 0</button>
+                        <button class="btn-green admin-only" style="margin:0; width:auto; font-size:13px; flex:1;" onclick="runIf(window.restoreAllStocks)">↩️ Restore Stocks</button>
                     </div>
 
                     <div id="stockCategoryFilterChips" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px;"></div>
                     <div id="stockList" style="margin-top:5px;"></div>
                     
-                    <div class="admin-only" style="background:#e8f5e9; color:#2e7d32; padding:10px; margin-top:10px; font-weight:bold; text-align:center; border-radius:8px;">
+                    <div class="admin-only" style="background:#ecfdf5; color:#047857; padding:12px; margin-top:12px; font-weight:bold; text-align:center; border-radius:var(--radius-sm); border:1px solid #a7f3d0;">
                         Total Expected Revenue: <span id="grandStockTotal">Loading...</span>
                     </div>
                 </div>
@@ -351,12 +500,12 @@
             <!-- HIST TAB -->
             <div id="sec-hist" class="section admin-only">
                 <div class="card">
-                    <h3>📜 Reports &amp; Sales History</h3>
-                    <div class="admin-only" style="margin-bottom:10px;">
-                        <label style="font-size:12px; font-weight:bold;">Filter by Seller / Staff:</label>
+                    <h3 style="margin-top:0;">📜 Reports &amp; Sales History</h3>
+                    <div class="admin-only" style="margin-bottom:12px;">
+                        <label style="font-size:12px; font-weight:700; color:#475569;">Filter by Seller / Staff:</label>
                         <select id="staffSelector" style="margin:0;" onchange="runIf(window.renderShopHistory)"><option value="all">All Staff</option></select>
                     </div>
-                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                    <div style="display:flex; gap:8px; margin-bottom:14px;">
                         <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'day')">📄 Daily PDF</button>
                         <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'month')">📄 Monthly PDF</button>
                         <button class="btn-blue btn-tbl" style="flex:1;" onclick="runIf(window.genReport, 'year')">📄 Yearly PDF</button>
@@ -367,53 +516,46 @@
 
             <!-- TRASH TAB -->
             <div id="sec-trash" class="section admin-only">
-                <div class="card"><h3>🗑️ Deleted Debtors</h3><div id="trashList"></div></div>
+                <div class="card"><h3 style="margin-top:0;">🗑️ Deleted Debtors</h3><div id="trashList"></div></div>
             </div>
+
+            <!-- DYNAMIC CLOUD SYNCHRONIZED TABS INJECTED HERE -->
+            <div id="customTabsContainer"></div>
         </div>
 
-        <!-- BOTTOM NAVIGATION -->
-        <div class="nav">
+        <!-- BOTTOM NAVIGATION (Only shows core tabs + Admin deployed tabs) -->
+        <div class="nav" id="mainBottomNav">
             <button class="nav-btn active" id="btn-dash" onclick="nav('sec-dash', this)"><span>📊</span>Dash</button>
             <button class="nav-btn" id="btn-sell" onclick="nav('sec-sell', this)"><span>🛒</span>Sell</button>
             <button class="nav-btn" id="btn-market" onclick="openMarketWorkspace()"><span>📋</span>Market</button>
             <button class="nav-btn" id="btn-debt" onclick="nav('sec-debt', this)"><span>📒</span>Debt</button>
             <button class="nav-btn" id="btn-stock" onclick="nav('sec-stock', this)"><span>📦</span>Stock</button>
             <button class="nav-btn admin-only" id="btn-hist" onclick="nav('sec-hist', this)"><span>📜</span>Hist</button>
+            
+            <!-- Master Deployed Tab Buttons appear here dynamically -->
+            <div id="customNavButtons" style="display:contents;"></div>
         </div>
     </div>
 
-    <!-- MODAL: DETAILED CAUTION POPUP -->
-    <div id="mod-debt-caution-details" class="modal">
-        <div class="modal-content" style="max-width: 480px;">
-            <h3 style="color:#b91c1c; margin-top:0;">⚠️ Supplier Debt Cautions</h3>
-            <p style="font-size:12px; color:#667085; margin-top:0;">These categories have less remaining retail stock value than the supplier debt owed:</p>
-            <div id="debtCautionModalList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
-            <div style="display:flex; gap:6px;">
-                <button class="btn-blue admin-only" onclick="closeModals(); openMarketWorkspace('mkt-payments');" style="flex:2;">💳 Pay Supplier Debts in Market</button>
-                <button class="btn-dark" onclick="closeModals()" style="flex:1;">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: DEDUCTION POPUP NOTICE WITH REMAINING VALUE -->
+    <!-- MODAL: DEDUCTION POPUP NOTICE -->
     <div id="mod-stock-deduct-notice" class="modal">
         <div class="modal-content" style="max-width: 440px; text-align: center;">
             <span style="font-size: 38px;" id="sdn-icon">📦</span>
-            <h3 style="margin: 6px 0 2px; color: #0d47a1;" id="sdn-title">Stock Deducted</h3>
+            <h3 style="margin: 6px 0 2px; color: var(--primary);" id="sdn-title">Stock Deducted</h3>
             <p style="font-size: 13.5px; color: #475569; margin: 12px 0 14px; line-height: 1.6;" id="sdn-body"></p>
-            <div id="sdn-debt-warning" style="display:none; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12.5px; color: #b91c1c; font-weight: bold; text-align: left;"></div>
+            <div id="sdn-debt-warning" style="display:none; background: #fff1f2; border: 1.5px solid #fda4af; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px; font-size: 12.5px; color: #9f1239; font-weight: bold; text-align: left;"></div>
             <button class="btn-green" onclick="document.getElementById('mod-stock-deduct-notice').style.display='none'">OK, Understood</button>
         </div>
     </div>
 
     <!-- MODAL: WORKERS MANAGEMENT (ADMIN ONLY) -->
     <div id="mod-workers" class="modal">
-        <div class="modal-content" style="max-width: 540px;">
-            <h3 style="margin-top:0; color:#0d47a1;">👥 Register &amp; Manage Workers</h3>
-            <p style="font-size:12px; color:#667085; margin-top:0;">Register workers with personal PINs. As admin, you can view or retrieve forgotten PINs anytime.</p>
+        <div class="modal-content" style="max-width: 520px;">
+            <h3 style="margin-top:0; color:var(--primary);">👥 Register &amp; Manage Workers</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Register workers with personal PINs. As admin, you can view or retrieve forgotten PINs anytime.</p>
             
-            <form onsubmit="window.saveWorker(event)" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
-                <b style="font-size:13px; color:#1e293b; display:block; margin-bottom:6px;">➕ Register New Worker</b>
+            <form onsubmit="window.saveWorker(event)" style="background:#f8fafc; padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border); margin-bottom:15px;">
+                <b style="font-size:13px; color:#1e293b; display:block; margin-bottom:8px;">➕ Register New Worker</b>
                 <input type="text" id="w-name" placeholder="Worker Full Name" required>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                     <input type="tel" id="w-phone" placeholder="Phone Number" required>
@@ -423,19 +565,19 @@
                 <button class="btn-green" type="submit" style="margin-top:4px;">💾 Register Worker</button>
             </form>
 
-            <h4 style="margin:10px 0 6px 0; color:#334155;">Active Workers Directory</h4>
+            <h4 style="margin:12px 0 8px 0; color:#334155;">Active Workers Directory</h4>
             <div id="workersList" style="max-height:220px; overflow-y:auto;"></div>
 
-            <button class="btn-dark" style="margin-top:10px;" onclick="closeModals()">Close</button>
+            <button class="btn-dark" style="margin-top:12px;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
     <!-- MODAL: SWITCH CASHIER / WORKER LOGIN -->
     <div id="mod-switch-cashier" class="modal">
-        <div class="modal-content" style="max-width: 420px; text-align:center;">
+        <div class="modal-content" style="max-width: 400px; text-align:center;">
             <span style="font-size:36px;">👤</span>
-            <h3 style="margin:6px 0 2px; color:#0d47a1;">Select Active Seller</h3>
-            <p style="font-size:12px; color:#64748b; margin-bottom:12px;">Sales and payments will be credited to this seller.</p>
+            <h3 style="margin:6px 0 2px; color:var(--primary);">Select Active Seller</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Sales and payments will be credited to this seller.</p>
             <select id="selWorkerCashier" style="margin-bottom:10px;" onchange="window.handleCashierSelectionChange()"></select>
             <input type="password" id="cashierPinInput" placeholder="Enter Worker PIN (or Shop PIN for Admin)" maxlength="8" style="text-align:center;">
             <button class="btn-green" onclick="window.confirmCashierLogin()">✅ Log In as Seller</button>
@@ -448,8 +590,8 @@
         <div class="modal-content" style="max-width: 520px;">
             <div style="text-align:center;">
                 <span style="font-size:36px;">💎</span>
-                <h2 style="margin:4px 0 2px; color:#0d47a1;">Upgrade STARBITE Plan</h2>
-                <p style="font-size:12.5px; color:#667085; margin-bottom:12px;">Scale your grocery or provisions business with powerful premium features.</p>
+                <h2 style="margin:4px 0 2px; color:var(--primary);">Upgrade STARBITE Plan</h2>
+                <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Scale your grocery or provisions business with powerful premium features.</p>
             </div>
 
             <div class="pricing-grid">
@@ -468,8 +610,8 @@
                 </div>
 
                 <div class="plan-card featured">
-                    <span style="position:absolute; top:-10px; right:12px; background:#7c3aed; color:white; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">RECOMMENDED</span>
-                    <h3 style="color:#7c3aed;">Premium</h3>
+                    <span style="position:absolute; top:-10px; right:12px; background:var(--purple); color:white; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">RECOMMENDED</span>
+                    <h3 style="color:var(--purple);">Premium</h3>
                     <div class="plan-price text-purple" id="displayPlanPrice">₦5,000 <small style="font-size:12px;">/ month</small></div>
                     <ul class="plan-features">
                         <li>✔️ <b>Unlimited</b> Products &amp; Sales</li>
@@ -491,12 +633,12 @@
     <div id="bankModal" class="modal">
         <div class="modal-content" style="max-width: 480px; text-align:center;">
             <span style="font-size:38px;">🏦</span>
-            <h2 style="margin:4px 0 2px; color:#0d47a1;">Bank Transfer Payment</h2>
-            <p style="font-size:12px; color:#667085; margin-bottom:12px;">Make a direct transfer to activate your Premium subscription immediately.</p>
+            <h2 style="margin:4px 0 2px; color:var(--primary);">Bank Transfer Payment</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Make a direct transfer to activate your Premium subscription immediately.</p>
 
             <div class="bank-info-box">
                 <div class="bank-info-row"><span>Bank Name:</span><b id="ownerBankDisplay">Loading Bank...</b></div>
-                <div class="bank-info-row"><span>Account Number:</span><b id="ownerAccountDisplay" style="font-size:16px; letter-spacing:1px; color:#0d47a1;">Loading...</b></div>
+                <div class="bank-info-row"><span>Account Number:</span><b id="ownerAccountDisplay" style="font-size:16px; letter-spacing:1px; color:var(--primary);">Loading...</b></div>
                 <div class="bank-info-row"><span>Account Name:</span><b id="ownerNameDisplay">Loading...</b></div>
                 <div class="bank-info-row" style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;"><span>Amount Due:</span><b class="text-green" id="ownerAmountDueDisplay" style="font-size:17px;">₦5,000</b></div>
             </div>
@@ -516,10 +658,10 @@
 
     <!-- FORGOT PIN MODAL -->
     <div id="mod-email-forgot-pin" class="modal">
-        <div class="modal-content" style="max-width: 420px; text-align: center;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
             <span style="font-size: 38px;">📧</span>
-            <h3 style="margin: 6px 0 2px; color: #0d47a1;">Reset Security PIN</h3>
-            <p style="font-size: 12px; color: #64748b; margin-bottom: 14px;">Receive a secure 6-digit code on your registered email address.</p>
+            <h3 style="margin: 6px 0 2px; color: var(--primary);">Reset Security PIN</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">Receive a secure 6-digit code on your registered email address.</p>
 
             <div id="fp-email-step-1">
                 <label style="font-size: 12px; font-weight: bold; text-align: left; display: block; margin-bottom: 4px;">Enter Store Code:</label>
@@ -529,7 +671,7 @@
             </div>
 
             <div id="fp-email-step-2" style="display: none;">
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; color: #166534;">
+                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); padding: 10px; margin-bottom: 12px; font-size: 12px; color: #047857;">
                     Verification code sent to:<br><b id="fpMaskedEmail">m***@gmail.com</b>
                 </div>
 
@@ -575,15 +717,15 @@
     
     <div id="mod-manual" class="modal"><div class="modal-content"><h3>➕ Add/Edit Debt</h3><input type="hidden" id="m-id"><input type="text" id="m-name" placeholder="Name"><input type="text" id="m-phone" placeholder="Phone"><button class="btn-blue" type="button" onclick="runIf(window.openDebtProductSelector)" style="margin-bottom:10px;">📦 Select Products</button><input type="number" id="m-amt" placeholder="Total Amount"><input type="text" id="m-desc" placeholder="Notes"><button class="btn-green" onclick="runIf(window.saveManualDebt)">Save</button><button class="btn-red" onclick="closeModals()">Cancel</button></div></div>
     
-    <div id="mod-hist" class="modal"><div class="modal-content"><h3>📜 Ledger</h3><h4 id="h-name" style="color:#0d47a1;"></h4><div class="summary-box"><div><span>Total</span><span id="h-total">0</span></div><div><span>Paid</span><span id="h-paid" class="text-green">0</span></div><div><span>Bal</span><span id="h-bal" class="text-red">0</span></div></div><table class="ledger-table"><thead><tr><th>Date</th><th>Method</th><th>Amount</th></tr></thead><tbody id="h-list"></tbody></table><br><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
+    <div id="mod-hist" class="modal"><div class="modal-content"><h3>📜 Ledger</h3><h4 id="h-name" style="color:var(--primary);"></h4><div class="summary-box"><div><span>Total</span><span id="h-total">0</span></div><div><span>Paid</span><span id="h-paid" class="text-green">0</span></div><div><span>Bal</span><span id="h-bal" class="text-red">0</span></div></div><table class="ledger-table"><thead><tr><th>Date</th><th>Method</th><th>Amount</th></tr></thead><tbody id="h-list"></tbody></table><br><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
     
-    <div id="mod-lowstock" class="modal"><div class="modal-content"><h3 style="color:#d32f2f;">⚠️ Low Stock Alert</h3><div id="lowStockList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
+    <div id="mod-lowstock" class="modal"><div class="modal-content"><h3 style="color:#dc2626;">⚠️ Low Stock Alert</h3><div id="lowStockList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
     
-    <div id="mod-expiring" class="modal"><div class="modal-content"><h3 style="color:#e65100;">⚠️ Expiring Soon</h3><div id="expiringList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
+    <div id="mod-expiring" class="modal"><div class="modal-content"><h3 style="color:#d97706;">⚠️ Expiring Soon</h3><div id="expiringList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div><button class="btn-dark" onclick="closeModals()">Close</button></div></div>
 
     <div id="mod-goods-bought" class="modal"><div class="modal-content" style="max-width: 580px;">
-        <h3 style="color:#0d47a1; margin-top:0;">📦 Goods Bought From Suppliers</h3>
-        <p style="font-size:12px; color:#667085; margin-top:0;">Recorded supplier purchases in cloud catalog:</p>
+        <h3 style="color:var(--primary); margin-top:0;">📦 Goods Bought From Suppliers</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Recorded supplier purchases in cloud catalog:</p>
         <div id="goodsBoughtList" style="max-height:350px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee; border-radius:8px;"></div>
         <div style="display:flex; gap:6px;">
             <button class="btn-blue admin-only" onclick="closeModals(); openMarketWorkspace('mkt-history');" style="flex:2;">📜 View in Market Workspace</button>
@@ -592,8 +734,8 @@
     </div></div>
 
     <div id="mod-goods-sold" class="modal"><div class="modal-content" style="max-width: 550px;">
-        <h3 style="color:#2e7d32; margin-top:0;">🛒 Goods Sold in Shop</h3>
-        <p style="font-size:12px; color:#667085; margin-top:0;">Items sold via cash and credit in the Selling tab:</p>
+        <h3 style="color:#059669; margin-top:0;">🛒 Goods Sold in Shop</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Items sold via cash and credit in the Selling tab:</p>
         <div id="goodsSoldList" style="max-height:320px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee; border-radius:8px;"></div>
         <div style="display:flex; gap:6px;">
             <button class="btn-green admin-only" onclick="closeModals(); nav('sec-hist');" style="flex:2;">📜 View Sales Receipts</button>
@@ -607,6 +749,22 @@
 
     <!-- UI ROUTING & HELPERS -->
     <script>
+        // High-Quality Toast Notifications
+        window.showToast = (msg, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = `app-toast ${type}`;
+            const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-6px)';
+                setTimeout(() => toast.remove(), 250);
+            }, 3200);
+        };
+
         function switchAuthMode(mode) {
             document.getElementById('formAuthLogin').style.display = mode === 'login' ? 'block' : 'none';
             document.getElementById('formAuthRegister').style.display = mode === 'register' ? 'block' : 'none';
@@ -640,7 +798,7 @@
             const h = window.location.hash.replace('#', '');
             if(h && document.getElementById(h)) {
                 const btnMap = { 'sec-dash': 'btn-dash', 'sec-sell': 'btn-sell', 'sec-debt': 'btn-debt', 'sec-stock': 'btn-stock', 'sec-hist': 'btn-hist' };
-                nav(h, document.getElementById(btnMap[h]));
+                nav(h, document.getElementById(btnMap[h]) || document.getElementById('btn-' + h));
             }
         });
 
@@ -653,7 +811,7 @@
         }
         function openProdModal() { 
             if(window.currentPlan === 'trial' && window.products && window.products.length >= 15) {
-                alert("⚠️ Free Trial limit reached (Maximum 15 products).\nUpgrade to Premium for unlimited products!");
+                window.showToast("Free Trial limit reached (Maximum 15 products). Upgrade to Premium!", "error");
                 openSubscriptionModal();
                 return;
             }
@@ -668,7 +826,82 @@
             document.getElementById('mod-prod').style.display='flex'; 
         }
         function openManualDebt() { document.getElementById('m-id').value = ''; document.getElementById('m-name').value = ''; document.getElementById('m-phone').value = ''; document.getElementById('m-amt').value = ''; document.getElementById('m-desc').value = ''; document.getElementById('mod-manual').style.display='flex'; }
-        function runIf(fn, arg) { if(typeof fn === 'function') fn(arg); else alert("Connecting... Please wait."); }
+        function runIf(fn, arg) { if(typeof fn === 'function') fn(arg); else window.showToast("Connecting... Please wait.", "info"); }
+
+        /* ========================================================
+           DYNAMIC CLOUD TAB DISPLAY & BRIDGE SYSTEM
+           ======================================================== */
+        window.customTabs = [];
+
+        window.renderUploadedTabs = () => {
+            const container = document.getElementById('customTabsContainer');
+            const navContainer = document.getElementById('customNavButtons');
+            if (!container || !navContainer) return;
+
+            const tabs = window.customTabs || [];
+
+            // 1. Build Tab Navigation Buttons
+            navContainer.innerHTML = tabs.map(tab => `
+                <button class="nav-btn" id="btn-sec-${tab.id}" onclick="nav('sec-${tab.id}', this)" title="${tab.title}">
+                    <span>${tab.icon || '📱'}</span>
+                    <span style="max-width:55px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${tab.title}</span>
+                </button>
+            `).join('');
+
+            // 2. Build Tab Section Containers with Sandbox Iframes
+            container.innerHTML = tabs.map(tab => `
+                <div id="sec-${tab.id}" class="section">
+                    <div class="custom-tab-frame-wrapper">
+                        <div class="custom-tab-header">
+                            <div>
+                                <b style="color:var(--primary);">${tab.icon || '📱'} ${tab.title}</b>
+                                <small style="color:var(--text-muted); margin-left:6px;">(${tab.fileName || 'Cloud App'}) • ☁️ Real-Time Synced</small>
+                            </div>
+                        </div>
+                        <iframe class="custom-tab-frame" id="iframe-${tab.id}"></iframe>
+                    </div>
+                </div>
+            `).join('');
+
+            // 3. Inject content with the Starbite Cloud Sync Bridge
+            tabs.forEach(tab => {
+                const ifr = document.getElementById(`iframe-${tab.id}`);
+                if (ifr) {
+                    const bridgeScript = `
+                        <script>
+                        (function() {
+                            window.STARBITE_CLOUD = {
+                                tabId: "${tab.id}",
+                                saveState: function(data) {
+                                    window.parent.postMessage({ type: 'STARBITE_SAVE_STATE', tabId: '${tab.id}', data: data }, '*');
+                                },
+                                onSync: function(callback) {
+                                    window.addEventListener('message', function(ev) {
+                                        if (ev.data && ev.data.type === 'STARBITE_STATE_UPDATED' && ev.data.tabId === '${tab.id}') {
+                                            callback(ev.data.data);
+                                        }
+                                    });
+                                    window.parent.postMessage({ type: 'STARBITE_GET_STATE', tabId: '${tab.id}' }, '*');
+                                },
+                                getProducts: function() {
+                                    return window.parent.products || [];
+                                }
+                            };
+                        })();
+                        <\/script>
+                    `;
+
+                    let content = tab.content || '';
+                    if (content.includes('<head>')) {
+                        content = content.replace('<head>', '<head>' + bridgeScript);
+                    } else {
+                        content = bridgeScript + content;
+                    }
+
+                    ifr.srcdoc = content;
+                }
+            });
+        };
     </script>
 
     <!-- Unified Backend Module -->
@@ -724,7 +957,6 @@
             }
         }, err => console.warn("Payment config sync:", err));
 
-        // Always sanitize currentBizId to strip unwanted whitespace
         let currentBizId = (localStorage.getItem('starbite_active_biz_id') || '').trim();
         let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
         let activeCashierName = localStorage.getItem('starbite_active_cashier') || (isStaffRole ? 'Staff' : 'Admin');
@@ -748,6 +980,49 @@
         const money = n => '₦' + Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
         const supplier = id => (marketDb.suppliers || []).find(x => x.id === id);
+
+        // Security check helper
+        function assertAdmin() {
+            if (isStaffRole) {
+                window.showToast("Access Restricted: Admin permission required", "error");
+                return false;
+            }
+            return true;
+        }
+
+        // Real-time synchronization of state between the uploaded app and Firebase
+        window.addEventListener('message', async (e) => {
+            if (!e.data || !e.data.type || !currentBizId) return;
+
+            if (e.data.type === 'STARBITE_SAVE_STATE') {
+                const { tabId, data } = e.data;
+                if (!tabId) return;
+                try {
+                    const updatedTabs = (window.customTabs || []).map(t => {
+                        if (t.id === tabId) {
+                            return { ...t, appState: data };
+                        }
+                        return t;
+                    });
+                    await setDoc(doc(db, "shops", currentBizId), {
+                        customTabs: updatedTabs
+                    }, { merge: true });
+                } catch(err) {
+                    console.error("Failed to sync app data:", err);
+                }
+            }
+
+            if (e.data.type === 'STARBITE_GET_STATE') {
+                const target = window.customTabs.find(t => t.id === e.data.tabId);
+                if (target && e.source) {
+                    e.source.postMessage({
+                        type: 'STARBITE_STATE_UPDATED',
+                        tabId: e.data.tabId,
+                        data: target.appState || {}
+                    }, '*');
+                }
+            }
+        });
 
         window.checkAuthDisplay = () => {
             const authView = document.getElementById('view-auth');
@@ -777,8 +1052,8 @@
             const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
             const pin = (document.getElementById('loginBizPin').value || '').trim();
 
-            if (!code) return alert("Please enter your Business Code.");
-            if (!pin) return alert("Please enter your Security PIN to log in.");
+            if (!code) return window.showToast("Please enter your Business Code.", "error");
+            if (!pin) return window.showToast("Please enter your Security PIN to log in.", "error");
 
             try {
                 const snap = await getDoc(doc(db, "shops", code));
@@ -786,23 +1061,24 @@
                     if (code === 'STARBITE') {
                         await setDoc(doc(db, "shops", "STARBITE"), { 
                             name: "Starbite Shop", code: "STARBITE", pin: pin || "1234", plan: "trial",
-                            trialExpiresAt: Date.now() + (14 * 24 * 60 * 60 * 1000), createdAt: Date.now(), workers: []
+                            trialExpiresAt: Date.now() + (14 * 24 * 60 * 60 * 1000), createdAt: Date.now(), workers: [], customTabs: []
                         }, { merge: true });
                     } else {
-                        return alert(`❌ Business code "${code}" does not exist. Click 'Create Shop' to register!`);
+                        return window.showToast(`Business code "${code}" does not exist. Click 'Create Shop' to register!`, "error");
                     }
                 } else {
                     const data = snap.data();
-                    if (pin !== String(data.pin || '1234').trim()) return alert("❌ Incorrect Security PIN for " + code);
+                    if (pin !== String(data.pin || '1234').trim()) return window.showToast("Incorrect Security PIN for " + code, "error");
                 }
 
                 currentBizId = code;
                 localStorage.setItem('starbite_active_biz_id', code);
                 window.checkAuthDisplay();
                 window.initBusinessListeners();
+                window.showToast("Welcome back!", "success");
             } catch (err) {
                 window.showDbError(err, "Login");
-                alert("Login failed: " + err.message);
+                window.showToast("Login failed: " + err.message, "error");
             }
         };
 
@@ -814,16 +1090,16 @@
             const email = (document.getElementById('regBizEmail').value || '').trim().toLowerCase();
             const pin = (document.getElementById('regBizPin').value || '').trim() || '1234';
 
-            if (!name || !code) return alert("Business Name and Store Code are required.");
-            if (!email || !email.includes('@')) return alert("A valid Owner Email is required for password recovery.");
+            if (!name || !code) return window.showToast("Business Name and Store Code are required.", "error");
+            if (!email || !email.includes('@')) return window.showToast("A valid Owner Email is required for password recovery.", "error");
 
             try {
                 const check = await getDoc(doc(db, "shops", code));
-                if (check.exists()) return alert(`❌ Store code "${code}" is already taken.`);
+                if (check.exists()) return window.showToast(`Store code "${code}" is already taken.`, "error");
 
                 const trialExpiry = Date.now() + (14 * 24 * 60 * 60 * 1000);
                 await setDoc(doc(db, "shops", code), { 
-                    name, code, phone, email, pin, plan: "trial", trialExpiresAt: trialExpiry, createdAt: Date.now(), workers: [] 
+                    name, code, phone, email, pin, plan: "trial", trialExpiresAt: trialExpiry, createdAt: Date.now(), workers: [], customTabs: [] 
                 }, { merge: true });
 
                 const freshMarketData = { shop: { name, phone }, suppliers: [], products: [], transactions: [], needs: [], categories: [...DEFAULT_CATEGORIES], deletedIds: [], updatedAt: Date.now() };
@@ -834,10 +1110,10 @@
                 localStorage.setItem('starbite_active_biz_id', code);
                 window.checkAuthDisplay();
                 window.initBusinessListeners();
-                alert(`🎉 Business "${name}" registered with 14 Days Free Trial!`);
+                window.showToast(`Business "${name}" registered with 14 Days Free Trial!`, "success");
             } catch (err) {
                 window.showDbError(err, "Registration");
-                alert("Registration failed: " + err.message);
+                window.showToast("Registration failed: " + err.message, "error");
             }
         };
 
@@ -851,7 +1127,7 @@
         window.sendEmailOtpForPinReset = async () => {
             const rawCode = (document.getElementById('fpEmailBizCode').value || '').trim().toUpperCase();
             const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
-            if (!code) return alert("Please enter your Store Code.");
+            if (!code) return window.showToast("Please enter your Store Code.", "error");
 
             const btn = document.getElementById('btnSendEmailOtp');
             btn.disabled = true;
@@ -861,14 +1137,14 @@
                 const snap = await getDoc(doc(db, "shops", code));
                 if (!snap.exists()) {
                     btn.disabled = false; btn.innerText = "📨 Send Code to My Email";
-                    return alert(`❌ Store Code "${code}" does not exist.`);
+                    return window.showToast(`Store Code "${code}" does not exist.`, "error");
                 }
 
                 const shopData = snap.data();
                 const email = shopData.email ? shopData.email.trim() : '';
                 if (!email) {
                     btn.disabled = false; btn.innerText = "📨 Send Code to My Email";
-                    return alert("No registered recovery email found. Contact administrator.");
+                    return window.showToast("No registered recovery email found. Contact administrator.", "error");
                 }
 
                 const parts = email.split('@');
@@ -884,11 +1160,11 @@
                     to_email: email, shop_name: shopData.name || code, store_code: code, otp_code: generatedOtp
                 });
 
-                alert(`📩 Code delivered to ${masked}.`);
+                window.showToast(`Code delivered to ${masked}.`, "success");
                 document.getElementById('fp-email-step-1').style.display = 'none';
                 document.getElementById('fp-email-step-2').style.display = 'block';
             } catch (err) {
-                alert("Error sending email: " + (err.text || err.message));
+                window.showToast("Error sending email: " + (err.text || err.message), "error");
             } finally {
                 btn.disabled = false; btn.innerText = "📨 Send Code to My Email";
             }
@@ -900,34 +1176,34 @@
             const rawCode = (document.getElementById('fpEmailBizCode').value || '').trim().toUpperCase();
             const code = rawCode.replace(/[^A-Z0-9_-]/g, '').trim();
 
-            if (!enteredOtp || enteredOtp.length < 6) return alert("Please enter the 6-digit code.");
-            if (!newPin || newPin.length < 4) return alert("PIN must be at least 4 digits.");
+            if (!enteredOtp || enteredOtp.length < 6) return window.showToast("Please enter the 6-digit code.", "error");
+            if (!newPin || newPin.length < 4) return window.showToast("PIN must be at least 4 digits.", "error");
 
             try {
                 const snap = await getDoc(doc(db, "shops", code));
-                if (!snap.exists()) return alert("Store record not found.");
+                if (!snap.exists()) return window.showToast("Store record not found.", "error");
                 const data = snap.data();
 
-                if (Date.now() > data.recoveryExpiresAt) return alert("Code has expired.");
-                if (data.recoveryOtp !== enteredOtp) return alert("❌ Incorrect verification code.");
+                if (Date.now() > data.recoveryExpiresAt) return window.showToast("Code has expired.", "error");
+                if (data.recoveryOtp !== enteredOtp) return window.showToast("Incorrect verification code.", "error");
 
                 await setDoc(doc(db, "shops", code), { 
                     pin: newPin, pinUpdatedAt: Date.now(), recoveryOtp: null, recoveryExpiresAt: null 
                 }, { merge: true });
                 
-                alert("🎉 Success! Your new PIN has been set.");
+                window.showToast("Success! Your new PIN has been set.", "success");
                 closeModals();
                 document.getElementById('loginBizCode').value = code;
                 document.getElementById('loginBizPin').value = newPin;
             } catch(err) {
-                alert("Error saving new PIN: " + err.message);
+                window.showToast("Error saving new PIN: " + err.message, "error");
             }
         };
 
         window.copyOwnerAccount = () => {
             const acc = livePaymentConfig.accountNumber;
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(acc).then(() => alert(`✅ Account Number (${acc}) copied!`)).catch(() => prompt("Copy account:", acc));
+                navigator.clipboard.writeText(acc).then(() => window.showToast(`Account Number (${acc}) copied!`, "success")).catch(() => prompt("Copy account:", acc));
             } else { prompt("Copy account:", acc); }
         };
 
@@ -979,15 +1255,15 @@
                 document.body.classList.remove('is-staff');
                 if (roleBadge) {
                     roleBadge.innerText = '👑 Admin';
-                    roleBadge.style.background = '#37474f';
-                    roleBadge.style.color = '#fde047';
+                    roleBadge.style.background = '#f1f5f9';
+                    roleBadge.style.color = '#334155';
                 }
             }
             if (cashierLbl) cashierLbl.innerText = isStaffRole ? activeCashierName : 'Admin';
         };
 
-        /* Worker Management & PIN Retrieval Functions (Admin Only) */
         window.openWorkersModal = () => {
+            if (!assertAdmin()) return;
             document.getElementById('w-name').value = '';
             document.getElementById('w-phone').value = '';
             document.getElementById('w-pin').value = '';
@@ -996,19 +1272,19 @@
             document.getElementById('mod-workers').style.display = 'flex';
         };
 
-        // Uses setDoc with merge: true to avoid 'No document to update' error
         window.saveWorker = async (e) => {
             e.preventDefault();
+            if (!assertAdmin()) return;
             const name = document.getElementById('w-name').value.trim();
             const phone = document.getElementById('w-phone').value.trim();
             const pin = document.getElementById('w-pin').value.trim();
             const address = document.getElementById('w-address').value.trim();
 
-            if (!name || !phone || !pin) return alert("Name, Phone, and 4-digit PIN are required.");
-            if (pin.length < 4) return alert("Worker PIN must be at least 4 digits.");
+            if (!name || !phone || !pin) return window.showToast("Name, Phone, and 4-digit PIN are required.", "error");
+            if (pin.length < 4) return window.showToast("Worker PIN must be at least 4 digits.", "error");
 
             const cleanBizId = (currentBizId || '').trim();
-            if (!cleanBizId) return alert("Error: No active store code found. Please re-login.");
+            if (!cleanBizId) return window.showToast("Error: No active store code found. Please re-login.", "error");
 
             try {
                 const workerId = 'worker_' + Date.now();
@@ -1022,17 +1298,18 @@
 
                 window.workers = updatedWorkers;
                 window.renderWorkersList();
-                alert(`✅ Worker "${name}" registered successfully!`);
+                window.showToast(`Worker "${name}" registered successfully!`, "success");
                 document.getElementById('w-name').value = '';
                 document.getElementById('w-phone').value = '';
                 document.getElementById('w-pin').value = '';
                 document.getElementById('w-address').value = '';
             } catch (err) {
-                alert("Error registering worker: " + err.message);
+                window.showToast("Error registering worker: " + err.message, "error");
             }
         };
 
         window.deleteWorker = async (id, name) => {
+            if (!assertAdmin()) return;
             if (!confirm(`Remove worker profile for "${name}"?`)) return;
             const cleanBizId = (currentBizId || '').trim();
             try {
@@ -1042,8 +1319,9 @@
                 }, { merge: true });
                 window.workers = updatedWorkers;
                 window.renderWorkersList();
+                window.showToast(`Worker "${name}" removed.`, "info");
             } catch (err) { 
-                alert("Error deleting worker: " + err.message); 
+                window.showToast("Error deleting worker: " + err.message, "error"); 
             }
         };
 
@@ -1081,7 +1359,6 @@
             }
         };
 
-        /* Cashier Shift Switcher & Worker Role Lock */
         window.openSwitchCashierModal = () => {
             const sel = document.getElementById('selWorkerCashier');
             sel.innerHTML = `<option value="__admin__">👑 Shop Admin</option>` + 
@@ -1100,25 +1377,25 @@
 
             if (selVal === '__admin__') {
                 const adminPin = String(currentShopData?.pin || "1234").trim();
-                if (inputPin !== adminPin) return alert("❌ Incorrect Shop PIN for Admin.");
+                if (inputPin !== adminPin) return window.showToast("Incorrect Shop PIN for Admin.", "error");
                 isStaffRole = false;
                 activeCashierName = 'Admin';
                 localStorage.setItem('starbite_is_staff', 'false');
                 localStorage.setItem('starbite_active_cashier', 'Admin');
                 window.updateRoleUI();
                 closeModals();
-                alert("👑 Admin unlocked!");
+                window.showToast("Admin unlocked!", "success");
             } else {
                 const w = window.workers.find(x => x.id === selVal);
-                if (!w) return alert("Please select a worker.");
-                if (String(w.pin).trim() !== inputPin) return alert("❌ Incorrect PIN for " + w.name);
+                if (!w) return window.showToast("Please select a worker.", "error");
+                if (String(w.pin).trim() !== inputPin) return window.showToast("Incorrect PIN for " + w.name, "error");
                 isStaffRole = true;
                 activeCashierName = w.name;
                 localStorage.setItem('starbite_is_staff', 'true');
                 localStorage.setItem('starbite_active_cashier', w.name);
                 window.updateRoleUI();
                 closeModals();
-                alert(`✅ Logged in as cashier: ${w.name}`);
+                window.showToast(`Logged in as cashier: ${w.name}`, "success");
             }
         };
 
@@ -1140,140 +1417,106 @@
                     localStorage.setItem('starbite_is_staff', 'false');
                     localStorage.setItem('starbite_active_cashier', 'Admin');
                     window.updateRoleUI();
-                    alert("👑 Admin unlocked!");
+                    window.showToast("Admin unlocked!", "success");
                 } else {
-                    alert("❌ Incorrect PIN.");
+                    window.showToast("Incorrect PIN.", "error");
                 }
             }
         };
 
-        // Resolves product/item category robustly even if missing on item
-        function resolveItemCategory(item) {
-            if (item.category && item.category !== 'General') return item.category.trim();
-            const mp = (marketDb.products || []).find(p => (item.productId && p.id === item.productId) || ((p.name || '').trim().toLowerCase() === (item.name || '').trim().toLowerCase()));
-            if (mp && mp.category && mp.category !== 'General') return mp.category.trim();
-            const sp = (window.products || []).find(p => (p.name || '').trim().toLowerCase() === (item.name || '').trim().toLowerCase());
-            if (sp && sp.category && sp.category !== 'General') return sp.category.trim();
-            
-            const name = (item.name || '').toLowerCase();
-            if (name.includes('egg')) return 'Eggs';
-            if (name.includes('drink') || name.includes('pepsi') || name.includes('coke') || name.includes('fanta') || name.includes('malt') || name.includes('water') || name.includes('juice')) return 'Drinks';
-            if (name.includes('flour') || name.includes('sugar') || name.includes('butter') || name.includes('yeast')) return 'Pastries Ingredients';
-            if (name.includes('rice') || name.includes('beans') || name.includes('garri') || name.includes('indomie')) return 'Foodstuffs & Grains';
-            return item.category || 'General';
-        }
-
         function getProductCategory(p) {
-            return resolveItemCategory(p);
+            if (p && p.category && p.category.trim() && p.category !== 'General') return p.category.trim();
+            const pName = (p && p.name ? p.name : '').toLowerCase();
+            const mktP = (marketDb.products || []).find(x => (x.name || '').trim().toLowerCase() === pName);
+            if (mktP && mktP.category && mktP.category.trim() && mktP.category !== 'General') return mktP.category.trim();
+            if (pName.includes('egg')) return 'Eggs';
+            if (pName.includes('drink') || pName.includes('pepsi') || pName.includes('coke') || pName.includes('fanta') || pName.includes('malt') || pName.includes('water')) return 'Drinks';
+            if (pName.includes('flour') || pName.includes('sugar') || pName.includes('butter') || pName.includes('yeast')) return 'Pastries Ingredients';
+            if (pName.includes('rice') || pName.includes('beans') || pName.includes('garri') || pName.includes('indomie')) return 'Foodstuffs & Grains';
+            return (p && p.category) ? p.category : 'General';
         }
-
-        /* Category Debt vs Remaining Stock Risk Engine - Accurate Pro-rating */
-        window.getAllCategoryDebtAlerts = () => {
-            const categoryDebts = {};
-            (marketDb.transactions || []).forEach(t => {
-                const bal = Number(t.balance || 0);
-                const tot = Number(t.total || 0);
-                if (bal > 0 && tot > 0) {
-                    const catTotalsInTx = {};
-                    (t.items || []).forEach(it => {
-                        const cat = resolveItemCategory(it);
-                        const line = Number(it.lineTotal || (Number(it.cost || 0) * Number(it.qty || 1)));
-                        catTotalsInTx[cat] = (catTotalsInTx[cat] || 0) + line;
-                    });
-
-                    Object.keys(catTotalsInTx).forEach(cat => {
-                        const catShare = catTotalsInTx[cat] / tot;
-                        categoryDebts[cat] = (categoryDebts[cat] || 0) + (bal * catShare);
-                    });
-                }
-            });
-
-            const categoryStock = {};
-            (window.products || []).forEach(p => {
-                const cat = resolveItemCategory(p);
-                if (!categoryStock[cat]) {
-                    categoryStock[cat] = { pieces: 0, value: 0, itemsPerPack: p.itemsPerPack || (cat.toLowerCase().includes('egg') ? 30 : 12) };
-                }
-                const packMultiplier = p.itemsPerPack || (cat.toLowerCase().includes('egg') ? 30 : 12);
-                const pieces = (Number(p.stock) || 0) + (Math.floor(Number(p.freezerPacks) || 0) * packMultiplier);
-                categoryStock[cat].pieces += pieces;
-                categoryStock[cat].value += (pieces * (Number(p.price) || 0));
-            });
-
-            const alerts = [];
-            Object.keys(categoryDebts).forEach(cat => {
-                const debt = Math.round(categoryDebts[cat]);
-                const stockData = categoryStock[cat] || { pieces: 0, value: 0, itemsPerPack: 12 };
-                const value = stockData.value;
-                const isEgg = cat.toLowerCase().includes('egg');
-                const packDivider = isEgg ? 30 : (stockData.itemsPerPack || 12);
-                const packs = Math.floor(stockData.pieces / packDivider);
-                const unitLabel = isEgg ? 'crates' : 'packs';
-
-                if (debt > 0 && value < debt) {
-                    alerts.push({
-                        category: cat,
-                        debt,
-                        remainingPacks: packs,
-                        remainingPieces: stockData.pieces,
-                        remainingValue: value,
-                        unitLabel
-                    });
-                }
-            });
-
-            return alerts;
-        };
 
         window.getCategoryDebtAlert = (categoryName) => {
             if (!categoryName) return null;
             const targetCat = categoryName.trim().toLowerCase();
-            const alerts = window.getAllCategoryDebtAlerts();
-            return alerts.find(a => a.category.trim().toLowerCase() === targetCat) || null;
-        };
 
-        /* Displays Caution Banners & Card on Dashboard and Stock tabs */
-        window.renderDashboardDebtCaution = () => {
-            const cautionAlerts = window.getAllCategoryDebtAlerts();
-            const cautionBanner = document.getElementById('dash-category-debt-banner');
-            const cautionStockBanner = document.getElementById('stock-category-debt-banner');
-            const cautionCard = document.getElementById('d-card-caution');
-            const cautionCount = document.getElementById('d-caution-count');
+            let remainingPieces = 0;
+            let remainingValue = 0;
+            (window.products || []).forEach(p => {
+                const pCat = (getProductCategory(p) || '').trim().toLowerCase();
+                if (pCat === targetCat) {
+                    const packMultiplier = Number(p.itemsPerPack) || (pCat.includes('egg') ? 30 : 12);
+                    const totalPieces = (Number(p.stock) || 0) + (Math.floor(Number(p.freezerPacks) || 0) * packMultiplier);
+                    remainingPieces += totalPieces;
+                    remainingValue += (totalPieces * (Number(p.price) || 0));
+                }
+            });
 
-            if (cautionAlerts.length > 0) {
-                const bannerHtml = cautionAlerts.map(a => `
-                    <div style="margin-bottom:8px;">
-                        ⚠️ <b>CAUTION (${esc(a.category)}):</b> Unsold stock is down to <b>${a.remainingPacks} ${a.unitLabel}</b> (Worth <b class="text-green">${money(a.remainingValue)}</b>), but you owe supplier <b class="text-red">${money(a.debt)}</b>! Remaining stock cannot clear debt. Immediate supplier payment required.
-                    </div>
-                `).join('');
-                
-                if (cautionBanner) { cautionBanner.innerHTML = bannerHtml; cautionBanner.style.display = 'block'; }
-                if (cautionStockBanner) { cautionStockBanner.innerHTML = bannerHtml; cautionStockBanner.style.display = 'block'; }
-                if (cautionCard) { cautionCard.style.display = 'block'; }
-                if (cautionCount) { cautionCount.innerText = `${cautionAlerts.length} Alert${cautionAlerts.length > 1 ? 's' : ''}`; }
-            } else {
-                if (cautionBanner) cautionBanner.style.display = 'none';
-                if (cautionStockBanner) cautionStockBanner.style.display = 'none';
-                if (cautionCard) cautionCard.style.display = 'none';
+            let supplierDebtOwed = 0;
+            (marketDb.transactions || []).forEach(t => {
+                const invoiceBal = Number(t.balance || 0);
+                const invoiceTotal = Number(t.total || 0);
+
+                if (invoiceBal > 0 && invoiceTotal > 0) {
+                    let catItemTotal = 0;
+                    (t.items || []).forEach(it => {
+                        const itemCat = (it.category || '').trim().toLowerCase();
+                        if (itemCat === targetCat) {
+                            catItemTotal += Number(it.lineTotal || (Number(it.cost || 0) * Number(it.qty || 1)));
+                        }
+                    });
+
+                    if (catItemTotal > 0) {
+                        const catShare = catItemTotal / invoiceTotal;
+                        supplierDebtOwed += (invoiceBal * catShare);
+                    }
+                }
+            });
+
+            const isEgg = targetCat.includes('egg');
+            const packDivider = isEgg ? 30 : 12;
+            const remainingPacks = Math.floor(remainingPieces / packDivider);
+
+            if (supplierDebtOwed > 0 && remainingValue < supplierDebtOwed) {
+                return {
+                    category: categoryName,
+                    remainingPacks,
+                    remainingValue,
+                    supplierDebtOwed: Math.round(supplierDebtOwed),
+                    unitLabel: isEgg ? 'crates' : 'packs'
+                };
             }
+            return null;
         };
 
-        window.showDebtCautionModal = () => {
-            const alerts = window.getAllCategoryDebtAlerts();
-            const list = document.getElementById('debtCautionModalList');
-            if (!list) return;
-            list.innerHTML = alerts.length ? alerts.map(a => `
-                <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:8px; padding:10px; margin-bottom:8px;">
-                    <b style="color:#b91c1c; font-size:14px;">⚠️ ${esc(a.category)} Deficit Risk</b>
-                    <div style="font-size:12.5px; color:#334155; margin-top:4px; line-height:1.5;">
-                        • Remaining Stock: <b>${a.remainingPacks} ${a.unitLabel}</b> (${a.remainingPieces} pcs)<br>
-                        • Value of Remaining Stock: <b class="text-green">${money(a.remainingValue)}</b><br>
-                        • Supplier Debt Owed: <b class="text-red">${money(a.debt)}</b><br>
-                        • <b>Deficit Gap:</b> <b class="text-red">${money(a.debt - a.remainingValue)}</b> shortfall
-                    </div>
-                </div>
-            `).join('') : '<p style="text-align:center; color:#666;">No debt risks detected.</p>';
-            document.getElementById('mod-debt-caution-details').style.display = 'flex';
+        window.renderDashboardDebtCaution = () => {
+            const banner = document.getElementById('dash-category-debt-banner');
+            if (!banner) return;
+
+            const categorySet = new Set();
+            (marketDb.categories || DEFAULT_CATEGORIES).forEach(c => categorySet.add(c));
+            (marketDb.transactions || []).forEach(t => {
+                (t.items || []).forEach(i => { if (i.category) categorySet.add(i.category); });
+            });
+
+            const alerts = [];
+            categorySet.forEach(cat => {
+                const risk = window.getCategoryDebtAlert(cat);
+                if (risk) {
+                    alerts.push(`
+                        <div style="margin-bottom:6px;">
+                            ⚠️ <b>CAUTION (${esc(risk.category)}):</b> Unsold stock is down to <b>${risk.remainingPacks} ${risk.unitLabel}</b> (Worth <b>${money(risk.remainingValue)}</b>), but you owe suppliers <b>${money(risk.supplierDebtOwed)}</b>! Remaining stock cannot clear debt. Immediate supplier payment required.
+                        </div>
+                    `);
+                }
+            });
+
+            if (alerts.length > 0) {
+                banner.innerHTML = alerts.join('');
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
         };
 
         window.showDeductionPopup = (title, icon, message, debtWarningHtml = '') => {
@@ -1349,7 +1592,7 @@
             window.renderStock();
             window.renderShopProducts();
             if (btn) btn.innerText = "🔄 Sync & Recover";
-            alert("✅ Products linked across Shop Inventory and Catalog!");
+            window.showToast("Products linked across Shop Inventory and Catalog!", "success");
         };
 
         window.forceCloudSync = async () => {
@@ -1362,15 +1605,16 @@
                     localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
                     await window.syncAndRecoverAllProducts();
                     window.renderStock();
-                    alert("Synced with cloud!");
+                    window.showToast("Synced with cloud!", "success");
                 }
                 if(badge) { badge.className = 'top-badge badge-live'; badge.innerText = '☁️ Live'; }
             } catch(e) { window.showDbError(e, "Market Fetch"); }
         };
 
         window.clearEntireAppData = async () => {
+            if (!assertAdmin()) return;
             if (!confirm(`⚠️ DANGER: Erase ALL data for "${currentBizId}"?`)) return;
-            if (prompt("Type RESET to confirm:") !== "RESET") return alert("Canceled.");
+            if (prompt("Type RESET to confirm:") !== "RESET") return window.showToast("Canceled.", "info");
 
             try {
                 const purgeCol = async (col) => {
@@ -1395,12 +1639,12 @@
                 await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), freshMarketData, { merge: true });
                 localStorage.removeItem('starbite_market_data_' + currentBizId);
 
-                await setDoc(doc(db, "shops", currentBizId), { workers: [] }, { merge: true });
+                await setDoc(doc(db, "shops", currentBizId), { workers: [], customTabs: [] }, { merge: true });
 
-                window.products = []; window.workers = []; sales = []; debtors = []; trash = []; cart = [];
-                window.renderShopProducts(); window.renderStock(); window.renderDash(); window.renderCart(); window.renderDebtors(); window.renderWorkersList();
-                alert(`All data for ${currentBizId} cleared!`);
-            } catch (err) { alert("Error: " + err.message); }
+                window.products = []; window.workers = []; window.customTabs = []; sales = []; debtors = []; trash = []; cart = [];
+                window.renderShopProducts(); window.renderStock(); window.renderDash(); window.renderCart(); window.renderDebtors(); window.renderWorkersList(); window.renderUploadedTabs();
+                window.showToast(`All data for ${currentBizId} cleared!`, "info");
+            } catch (err) { window.showToast("Error: " + err.message, "error"); }
         };
 
         window.initBusinessListeners = () => {
@@ -1420,13 +1664,28 @@
             document.getElementById('topShopName').innerText = `${marketDb.shop.name || currentBizId}`;
             window.updateRoleUI();
 
+            // REAL-TIME FIRESTORE LISTENER FOR SHOP DATA & CUSTOM TABS (DEPLOYED FROM PRIVATE)
             unsubShopMeta = onSnapshot(doc(db, "shops", currentBizId), (snap) => {
                 if (snap.exists()) {
                     currentShopData = snap.data();
                     window.updatePlanUI(currentShopData);
                     window.workers = Array.isArray(currentShopData.workers) ? currentShopData.workers : [];
+                    window.customTabs = Array.isArray(currentShopData.customTabs) ? currentShopData.customTabs : [];
                     window.renderWorkersList();
+                    window.renderUploadedTabs();
                     window.renderDashboardDebtCaution();
+
+                    // Broadcast live state updates to any open tab iframes
+                    window.customTabs.forEach(t => {
+                        const ifr = document.getElementById(`iframe-${t.id}`);
+                        if (ifr && ifr.contentWindow) {
+                            ifr.contentWindow.postMessage({
+                                type: 'STARBITE_STATE_UPDATED',
+                                tabId: t.id,
+                                data: t.appState || {}
+                            }, '*');
+                        }
+                    });
                 }
             }, err => window.showDbError(err, "ShopMeta"));
 
@@ -1493,7 +1752,6 @@
             document.getElementById('d-mkt-bought').innerText = totalBought.toLocaleString() + " pcs";
             document.getElementById('d-mkt-sold').innerText = totalSold.toLocaleString() + " pcs";
             document.getElementById('d-stock').innerText = filteredProducts.filter(p => getTotalStockUnits(p) <= 5).length;
-            
             window.renderDashboardDebtCaution();
         };
 
@@ -1570,11 +1828,11 @@
             if(isNaN(idx) || !qty) return;
             const p = filteredProducts[idx];
             const maxSellable = getTotalStockUnits(p);
-            if(qty > maxSellable) return alert(`Exceeds available stock (${maxSellable} pcs)!`);
+            if(qty > maxSellable) return window.showToast(`Exceeds available stock (${maxSellable} pcs)!`, "error");
 
             const exist = cart.find(c => c.id === p.id);
             if(exist) {
-                if(exist.qty + qty > maxSellable) return alert("Not enough shop stock available!");
+                if(exist.qty + qty > maxSellable) return window.showToast("Not enough shop stock available!", "error");
                 exist.qty += qty; exist.sub = exist.price * exist.qty;
             } else { cart.push({ ...p, idx, qty, sub: p.price * qty }); }
             window.renderCart();
@@ -1604,7 +1862,7 @@
             else {
                 const p = cart[i];
                 const maxAvailable = getTotalStockUnits(p);
-                if(p.qty + delta > maxAvailable) return alert("Cannot exceed available stock!");
+                if(p.qty + delta > maxAvailable) return window.showToast("Cannot exceed available stock!", "error");
                 p.qty += delta;
                 if(p.qty <= 0) cart.splice(i, 1);
                 else p.sub = p.price * p.qty;
@@ -1646,13 +1904,13 @@
 
                 if(type === 'cash') {
                     await addDoc(collection(db, "shops", currentBizId, "sales"), { date, desc, items: itemsArr, total, type: 'Cash', soldBy: currentCashier });
-                    alert(`✅ Cash Sale Recorded! (Sold by: ${currentCashier})`);
+                    window.showToast(`Cash Sale Recorded! (Sold by: ${currentCashier})`, "success");
                 } else {
                     const name = document.getElementById('c-name').value;
-                    if(!name) return alert("Enter customer name");
+                    if(!name) return window.showToast("Enter customer name", "error");
                     await addDoc(collection(db, "shops", currentBizId, "debtors"), { name, phone: document.getElementById('c-phone').value, desc, totalDebt: total, payments: [], date, recordedBy: currentCashier });
                     await addDoc(collection(db, "shops", currentBizId, "sales"), { date, desc: `Credit Sale: ${name}`, items: itemsArr, total, type: 'Credit', soldBy: currentCashier });
-                    alert(`Added to Debtors Book! (Sold by: ${currentCashier})`);
+                    window.showToast(`Added to Debtors Book! (Sold by: ${currentCashier})`, "success");
                     closeModals();
                 }
 
@@ -1672,18 +1930,17 @@
             sel.innerHTML = (marketDb.categories || DEFAULT_CATEGORIES).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
         };
 
-        /* Stock Deduction & Value Notifications */
         window.useEggCrate = async (id) => {
             const p = (window.products || []).find(x => x.id === id);
             if (!p) return;
             const itemsPerCrate = p.itemsPerPack || 30;
             const currentCrates = Math.floor((p.stock || 0) / itemsPerCrate);
-            if (currentCrates <= 0) return alert("No full crates available in room stock!");
+            if (currentCrates <= 0) return window.showToast("No full crates available in room stock!", "error");
 
             const choice = prompt(`How many crates removed? (${currentCrates} crates available):`, "1");
             if (!choice) return;
             const used = parseInt(choice);
-            if (isNaN(used) || used <= 0 || used > currentCrates) return alert("Invalid count");
+            if (isNaN(used) || used <= 0 || used > currentCrates) return window.showToast("Invalid count", "error");
 
             const remainingCrates = currentCrates - used;
             const remainingPieces = Math.max(0, (p.stock || 0) - (used * itemsPerCrate));
@@ -1695,11 +1952,10 @@
 
             window.renderStock();
 
-            // Run Debt Risk Analysis for Eggs
             const risk = window.getCategoryDebtAlert(p.category || 'Eggs');
             let debtHtml = '';
             if (risk) {
-                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Total remaining ${risk.category} stock is worth <b>${money(risk.remainingValue)}</b>, but you owe suppliers <b>${money(risk.debt)}</b>! Stock cannot cover debt. Pay supplier immediately!`;
+                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Total remaining ${risk.category} stock is worth <b>${money(risk.remainingValue)}</b>, but you owe suppliers <b>${money(risk.supplierDebtOwed)}</b>! Stock cannot cover debt. Pay supplier immediately!`;
             }
 
             window.showDeductionPopup(
@@ -1717,12 +1973,12 @@
             if (!p) return;
             const itemsPerPack = p.itemsPerPack || 12;
             const roomPacks = Math.floor((p.stock || 0) / itemsPerPack);
-            if (roomPacks <= 0) return alert(`No available room stock!`);
+            if (roomPacks <= 0) return window.showToast("No available room stock!", "error");
 
             const input = prompt(`Packs to move to freezer? (${roomPacks} available):`, "1");
             if (!input) return;
             const packs = parseInt(input);
-            if (isNaN(packs) || packs <= 0 || packs > roomPacks) return alert("Invalid count");
+            if (isNaN(packs) || packs <= 0 || packs > roomPacks) return window.showToast("Invalid count", "error");
 
             const remainingRoomPacks = roomPacks - packs;
             const newRoomPieces = Math.max(0, (p.stock || 0) - (packs * itemsPerPack));
@@ -1740,7 +1996,7 @@
             const risk = window.getCategoryDebtAlert(p.category || 'Drinks');
             let debtHtml = '';
             if (risk) {
-                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Remaining ${risk.category} stock value (${money(risk.remainingValue)}) cannot cover unpaid supplier debt (${money(risk.debt)})!`;
+                debtHtml = `⚠️ <b>DEBT CAUTION:</b> Remaining ${risk.category} stock value (${money(risk.remainingValue)}) cannot cover unpaid supplier debt (${money(risk.supplierDebtOwed)})!`;
             }
 
             window.showDeductionPopup(
@@ -1810,15 +2066,18 @@
         };
 
         window.addStock = async (id) => {
+            if (!assertAdmin()) return;
             const n = prompt("Add quantity (pieces):");
             if(n && !isNaN(parseInt(n))) {
                 await updateDoc(doc(db, "shops", currentBizId, "products", id), {
                     stock: increment(parseInt(n)), initStock: increment(parseInt(n))
                 });
+                window.showToast("Stock updated!", "success");
             }
         };
 
         window.resetAllStocksToZero = async () => {
+            if (!assertAdmin()) return;
             if(!confirm("Reset ALL stock to 0?")) return;
             const backup = {};
             window.products.forEach(p => backup[p.id] = { stock: p.stock||0, initStock: p.initStock||0, freezerPacks: p.freezerPacks||0 });
@@ -1826,17 +2085,20 @@
             for(const p of window.products) {
                 if(p.id !== '_backup') await updateDoc(doc(db, "shops", currentBizId, "products", p.id), { stock: 0, initStock: 0, freezerPacks: 0 });
             }
+            window.showToast("All stocks reset to 0.", "info");
         };
 
         window.restoreAllStocks = async () => {
+            if (!assertAdmin()) return;
             const bDoc = await getDoc(doc(db, "shops", currentBizId, "products", "_backup"));
-            if(!bDoc.exists()) return alert("No backup found.");
+            if(!bDoc.exists()) return window.showToast("No backup found.", "error");
             const backup = bDoc.data().backup;
             for(const id in backup) await updateDoc(doc(db, "shops", currentBizId, "products", id), backup[id]);
-            alert("Stocks restored!");
+            window.showToast("Stocks restored!", "success");
         };
 
         window.saveProduct = async () => {
+            if (!assertAdmin()) return;
             const id = document.getElementById('p-id').value;
             const name = document.getElementById('p-name').value.trim();
             const category = document.getElementById('p-category').value || 'General';
@@ -1846,12 +2108,13 @@
             const expiryDate = document.getElementById('p-expiry').value;
             const barcode = document.getElementById('p-barcode').value;
 
-            if(!name || isNaN(price)) return alert("Name & Price required");
+            if(!name || isNaN(price)) return window.showToast("Name & Price required", "error");
             const docId = id || name.toLowerCase().replace(/[^a-z0-9]/g, '_');
             await setDoc(doc(db, "shops", currentBizId, "products", docId), {
                 name, category, price, itemsPerPack, stock, initStock: stock, barcode, expiryDate
             }, { merge: true });
             closeModals();
+            window.showToast("Product saved successfully!", "success");
         };
 
         window.renderDebtors = () => {
@@ -1896,9 +2159,11 @@
                 date: new Date().toISOString(), desc: `Debt Pay: ${d.name} (${method})`, total: amt, type: 'Debt Payment', soldBy: currentCashier
             });
             closeModals();
+            window.showToast("Payment recorded!", "success");
         };
 
         window.viewHist = (id) => {
+            if (!assertAdmin()) return;
             const d = debtors.find(x => x.id === id);
             document.getElementById('h-name').innerText = d.name;
             const paid = (d.payments || []).reduce((a,b)=>a+b.amount,0);
@@ -1910,6 +2175,7 @@
         };
 
         window.saveManualDebt = async () => {
+            if (!assertAdmin()) return;
             const name = document.getElementById('m-name').value;
             const amt = parseInt(document.getElementById('m-amt').value);
             const currentCashier = isStaffRole ? (activeCashierName || 'Staff') : 'Admin';
@@ -1918,6 +2184,7 @@
                     name, phone: document.getElementById('m-phone').value, desc: document.getElementById('m-desc').value || "Manual", totalDebt: amt, payments: [], date: new Date().toISOString(), recordedBy: currentCashier
                 });
                 closeModals();
+                window.showToast("Debt added to records.", "success");
             }
         };
 
@@ -2005,10 +2272,10 @@
             const chosenStaff = staffSel ? staffSel.value : 'all';
             const filteredSales = sales.filter(s => chosenStaff === 'all' || s.soldBy === chosenStaff);
 
-            div.innerHTML = filteredSales.map(s => `<div style="padding:8px; border-bottom:1px solid #eee;">
-                <div><b>₦${Number(s.total || 0).toLocaleString()}</b> - <small>${s.desc} (${s.type})</small><br>
+            div.innerHTML = filteredSales.map(s => `<div style="padding:10px 8px; border-bottom:1px solid #f1f5f9;">
+                <div><b>₦${Number(s.total || 0).toLocaleString()}</b> - <small style="color:#475569;">${s.desc} (${s.type})</small><br>
                 <span style="font-size:11px; color:#64748b;">📅 ${new Date(s.date).toLocaleString()} • 👤 <b>Sold By: ${esc(s.soldBy || 'Staff')}</b></span></div>
-            </div>`).join('') || '<p style="text-align:center; color:#999; font-size:12px;">No sales recorded yet.</p>';
+            </div>`).join('') || '<p style="text-align:center; color:#94a3b8; font-size:12px; padding:12px;">No sales recorded yet.</p>';
         };
 
         let html5QrCode = null;
@@ -2029,13 +2296,14 @@
 
         window.startVoiceSearch = () => {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if(!SR) return alert("Voice Search not supported on this browser.");
+            if(!SR) return window.showToast("Voice Search not supported on this browser.", "error");
             const r = new SR();
             r.onresult = (e) => { document.getElementById('search').value = e.results[0][0].transcript; window.renderShopProducts(); };
             r.start();
         };
 
         window.genReport = (type) => {
+            if (!assertAdmin()) return;
             if(window.currentPlan !== 'premium') {
                 if(!confirm("🔒 Exporting Sales Reports to PDF is a Premium Feature.\nUpgrade now?")) return;
                 openSubscriptionModal();
@@ -2052,6 +2320,7 @@
                 body: exportSales.map(s => [new Date(s.date).toLocaleDateString(), s.desc, s.type, s.soldBy || 'Staff', "₦" + Number(s.total || 0).toLocaleString()])
             });
             pdf.save(`sales_report_${type}_${Date.now()}.pdf`);
+            window.showToast("PDF report generated!", "success");
         };
 
         window.checkAuthDisplay();
