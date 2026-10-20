@@ -81,7 +81,7 @@
         .bg-full { background: #d4edda; color: #155724; } .bg-part { background: #fff3cd; color: #856404; } .bg-over { background: #f8d7da; color: #721c24; }
         .stock-badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .stock-badge-orange { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .stock-badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .stock-badge-red { background: #fee2e2; color: #b91c1c; border: 1.5px solid #ef4444; }
         .size-big { background: #e0e7ff; color: #3730a3; } .size-small { background: #fef3f2; color: #b42318; }
         .text-green { color: #28a745; } .text-red { color: #dc3545; } .text-blue { color: #007bff; }
         
@@ -111,7 +111,7 @@
         </header>
 
         <div class="container">
-            <!-- Sub-Pages Navigation: Admin tabs are controlled exclusively by Business Manager App -->
+            <!-- Sub-Pages Navigation -->
             <div class="mkt-sub-nav">
                 <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
                 <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
@@ -126,11 +126,14 @@
             <!-- SUB-PAGE 1: MARK PRODUCTS TO ORDER -->
             <div id="mkt-order" class="mkt-page active-page">
                 <div class="card">
-                    <!-- Accurate Category Debt Warning Banner -->
-                    <div id="mkt-category-debt-banner" style="display:none; background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 14px; margin-bottom:15px; color:#991b1b; font-size:13px; line-height:1.5;"></div>
+                    <!-- Urgent Out-of-Stock Alert Banner (Connected to Production) -->
+                    <div id="mkt-out-of-stock-banner" style="display:none; background:#fef2f2; border:1.8px solid #ef4444; border-radius:10px; padding:12px 14px; margin-bottom:15px; color:#991b1b; font-size:13px; line-height:1.5;"></div>
+
+                    <!-- Category Debt Caution Banner -->
+                    <div id="mkt-category-debt-banner" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 14px; margin-bottom:15px; color:#92400e; font-size:13px; line-height:1.5;"></div>
 
                     <h3 style="margin-top:0;">🛒 Mark Products to Order</h3>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Cloud Synced across all phones: Total Bought, Total Sold, and Shop Available Stock (Room + Freezer).</p>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Synced with <b>Bakery Production Record</b> and Shop Stock: Total Bought, Production/Shop Sold, and Remaining Available Crates/Packs.</p>
                     
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
                         <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="window.renderOrderGoodsList()" style="flex:2; margin:0;">
@@ -144,10 +147,10 @@
                                 <tr>
                                     <th style="width:40px; text-align:center;">Mark</th>
                                     <th>Product Name</th>
-                                    <th style="text-align:center;">Size</th>
+                                    <th style="text-align:center;">Pack Type</th>
                                     <th style="text-align:center; background:#f0fdf4;">Total Bought</th>
-                                    <th style="text-align:center; background:#eff6ff;">Sold in Shop</th>
-                                    <th style="text-align:center; background:#fefce8;">Shop Available</th>
+                                    <th style="text-align:center; background:#eff6ff;">Shop Sold / Used</th>
+                                    <th style="text-align:center; background:#fefce8;">Store Available (Packs/Crates)</th>
                                     <th class="admin-only">Wholesale</th>
                                     <th>Retail Sell</th>
                                     <th>Supplier</th>
@@ -194,7 +197,7 @@
             <div id="mkt-buy" class="mkt-page">
                 <div class="card">
                     <h3 id="txFormTitle" style="margin-top:0;">📦 Record Market Purchase</h3>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Purchases logged here <b>immediately refill shop stock</b> in the main selling tab across all phones!</p>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Purchases logged here <b>immediately refill store stock</b> for both Production recipes and main selling tabs!</p>
                     
                     <form id="transactionForm" onsubmit="window.saveTransaction(event)">
                         <input type="hidden" id="editingTxId">
@@ -207,7 +210,7 @@
                         </div>
 
                         <div style="margin-top:10px;">
-                            <label style="font-size:12px; font-weight:bold;">Products Bought (Auto-Refills Shop Stock):</label>
+                            <label style="font-size:12px; font-weight:bold;">Products Bought (Auto-Refills Stock):</label>
                             <div id="transactionLines"></div>
                             <button type="button" class="btn-dark" style="padding:6px; font-size:12px; width:auto; margin-top:5px;" onclick="window.addTransactionLine()">➕ Add Product Line</button>
                         </div>
@@ -382,16 +385,25 @@
         <h3 id="mktProdModalTitle">Register Product</h3>
         <form onsubmit="window.saveMarketProduct(event)">
             <input type="hidden" id="mktProductId">
-            <label>Product Name:</label><input id="mpName" required>
+            <label>Product Name:</label><input id="mpName" placeholder="e.g. Eggs, Flour, Butter" required>
             <label>Supplier:</label><select id="mpSupplier" required></select>
             <label>Category:</label><select id="mpCategory" onchange="window.handleProductCategoryChange(this)" required></select>
-            <label>Size:</label><select id="mpUnit"><option value="Big">Big</option><option value="Small">Small</option></select>
+            <label>Pack Type / Unit:</label>
+            <select id="mpUnit">
+                <option value="Crate">Crate (e.g. Eggs - 30 pcs)</option>
+                <option value="Pack">Pack / Carton</option>
+                <option value="Bag">Bag (e.g. Flour 50kg)</option>
+                <option value="Big">Big</option>
+                <option value="Small">Small</option>
+            </select>
             <div class="admin-only">
                 <label>Wholesale Cost (₦):</label><input id="mpCost" type="number" min="0" step="0.01" value="0" required>
             </div>
-            <label>Items in Pack / Crate:</label><input id="mpPackQty" type="number" min="1" value="1">
-            <label>Retail Selling Price (₦):</label><input id="mpSell" type="number" min="0" step="0.01" required>
-            <button class="btn-green" type="submit">Save to Market &amp; Shop</button>
+            <label>Items / Pieces in 1 Pack or Crate:</label>
+            <input id="mpPackQty" type="number" min="1" value="30" placeholder="e.g. 30 for Eggs, 12 for drinks">
+            <label>Retail Selling Price per Unit/Piece (₦):</label>
+            <input id="mpSell" type="number" min="0" step="0.01" required>
+            <button class="btn-green" type="submit">Save to Market &amp; Store</button>
             <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
         </form>
     </div></div>
@@ -407,11 +419,11 @@
         <button class="btn-red" onclick="closeModals()">Cancel</button>
     </div></div>
 
-    <!-- MODAL 6: EDIT GOODS BOUGHT (FINE-GRAINED LINE ADJUSTMENT) -->
+    <!-- MODAL 6: EDIT GOODS BOUGHT -->
     <div id="mod-edit-goods-bought" class="modal">
         <div class="modal-content" style="max-width: 480px;">
             <h3 style="margin-top:0; color:#0d47a1;">✏️ Edit Goods Bought</h3>
-            <p style="font-size:11px; color:#667085; margin-top:0;">Updates will adjust the supplier record and automatically sync remaining stock in your Shop Selling Tab.</p>
+            <p style="font-size:11px; color:#667085; margin-top:0;">Updates will adjust the supplier record and automatically sync store stock.</p>
             <form onsubmit="window.saveEditGoodsBought(event)">
                 <input type="hidden" id="egb-tx-id">
                 <input type="hidden" id="egb-item-idx">
@@ -423,8 +435,8 @@
                 <select id="egb-supplier" required></select>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div><label style="font-size:12px; font-weight:bold;">Packs Bought</label><input type="number" id="egb-qty" min="1" step="1" required></div>
-                    <div><label style="font-size:12px; font-weight:bold;">Items per Pack</label><input type="number" id="egb-pack-qty" min="1" step="1" required></div>
+                    <div><label style="font-size:12px; font-weight:bold;">Packs/Crates Bought</label><input type="number" id="egb-qty" min="1" step="1" required></div>
+                    <div><label style="font-size:12px; font-weight:bold;">Items per Pack/Crate</label><input type="number" id="egb-pack-qty" min="1" step="1" required></div>
                 </div>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -443,7 +455,6 @@
     <!-- UI Subpage Navigation Scripts -->
     <script>
         function showMktPage(pageId) {
-            // Guard: If worker mode is active in main app, prevent opening admin-only tabs
             if (document.body.classList.contains('is-staff')) {
                 const targetBtn = Array.from(document.querySelectorAll('.mkt-sub-btn')).find(b => b.getAttribute('onclick')?.includes(pageId));
                 if (targetBtn && targetBtn.classList.contains('admin-only')) {
@@ -472,7 +483,7 @@
         });
     </script>
 
-    <!-- Complete Market Firebase Backend Module -->
+    <!-- Complete Market & Production Firebase Bridge Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy, limit, increment, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -489,13 +500,16 @@
         const app = initializeApp(shopConfig);
         const db = getFirestore(app);
 
-        // Sanitize store code to prevent whitespace path bugs
         let currentBizId = (localStorage.getItem('starbite_active_biz_id') || '').trim();
         let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
 
         if (!currentBizId) {
             window.location.href = 'Business%20manager%20app.html';
         }
+
+        // Shared Mother-App Channel for Instant Cross-Tab Communication
+        const motherChannel = new BroadcastChannel('starbite_inventory_channel_' + currentBizId);
+        window.starbiteMotherChannel = motherChannel;
 
         window.showDbError = (err, context = "Market Database") => {
             console.warn(`Firestore [${context}]:`, err.message);
@@ -506,7 +520,7 @@
             setTimeout(() => { banner.style.display = 'none'; }, 6000);
         };
 
-        const DEFAULT_CATEGORIES = ['Drinks','Eggs','Pastries Ingredients','Foodstuffs & Grains','Provisions & Groceries','Cooking Oil & Spices','Packaging Materials','General'];
+        const DEFAULT_CATEGORIES = ['Eggs','Drinks','Pastries Ingredients','Foodstuffs & Grains','Provisions & Groceries','Cooking Oil & Spices','Packaging Materials','General'];
         window.marketDb = JSON.parse(localStorage.getItem('starbite_market_data_' + currentBizId) || 'null') || {
             shop: { name: currentBizId, phone: '' }, suppliers: [], products: [], transactions: [], needs: [], categories: [...DEFAULT_CATEGORIES], deletedIds: []
         };
@@ -514,13 +528,13 @@
         let markedOrderState = {};
         let shopProducts = [];
         let shopSales = [];
+        let shopProductions = [];
         let currentShopMeta = null;
 
         const money = n => '₦' + Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
         const supplier = id => (marketDb.suppliers || []).find(x => x.id === id);
 
-        // Role UI: Controlled exclusively from Business Manager App
         window.updateRoleUI = () => {
             isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
             if (isStaffRole) {
@@ -534,85 +548,37 @@
             }
         };
 
-        // Real-time synchronization of role mode across tabs, history, and page returns
         window.addEventListener('storage', (e) => {
             if (e.key === 'starbite_is_staff') {
                 window.updateRoleUI();
                 window.renderOrderGoodsList();
                 window.renderMarketProducts();
-                window.handleTransactionSupplierChange();
             }
         });
-        window.addEventListener('pageshow', () => window.updateRoleUI());
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) window.updateRoleUI(); });
 
-        function mergeEntities(localArr, cloudArr) {
-            const map = new Map();
-            const deleted = new Set(marketDb.deletedIds || []);
-            (cloudArr || []).forEach(item => { if (item && item.id && !deleted.has(item.id)) map.set(item.id, item); });
-            (localArr || []).forEach(item => {
-                if (!item || !item.id || deleted.has(item.id)) return;
-                if (!map.has(item.id)) { map.set(item.id, item); return; }
-                const cloudItem = map.get(item.id);
-                map.set(item.id, Number(item.updatedAt || 0) >= Number(cloudItem.updatedAt || 0) ? item : cloudItem);
-            });
-            return Array.from(map.values());
-        }
-
-        window.saveMarketState = async (syncCloud = true) => {
-            marketDb.updatedAt = Date.now();
-            localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
-
-            if (syncCloud && currentBizId) {
-                const badge = document.getElementById('cloudStatusBadge');
-                if (badge) { badge.className = 'top-badge badge-syncing'; badge.innerText = '☁️ Syncing...'; }
-                try {
-                    await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), JSON.parse(JSON.stringify(marketDb)), { merge: true });
-                    if (badge) { badge.className = 'top-badge badge-live'; badge.innerText = '☁️ Live'; }
-                } catch(e) {
-                    window.showDbError(e, "Market Save");
-                }
-            }
-        };
-
-        window.forceCloudSync = async () => {
-            const badge = document.getElementById('cloudStatusBadge');
-            if(badge) badge.innerText = '☁️ Fetching...';
-            try {
-                const snap = await getDoc(doc(db, "shops", currentBizId, "market", "main_store"));
-                if (snap.exists()) {
-                    const cd = snap.data();
-                    if (cd.shop) marketDb.shop = cd.shop;
-                    ['suppliers', 'products', 'transactions', 'needs'].forEach(k => {
-                        marketDb[k] = mergeEntities(marketDb[k], cd[k]);
-                    });
-                    if (Array.isArray(cd.categories)) {
-                        cd.categories.forEach(c => { if (!marketDb.categories.includes(c)) marketDb.categories.push(c); });
-                    }
-                    localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
-                    window.renderAllMarketViews();
-                    alert("Synced with cloud!");
-                }
-                if(badge) { badge.className = 'top-badge badge-live'; badge.innerText = '☁️ Live'; }
-            } catch(e) { window.showDbError(e, "Market Sync"); }
-        };
-
-        // Unified Stock Calculation: Considers room stock + freezer units
+        // ----------------------------------------------------
+        // ACCURATE CRATE & PACK STOCK CALCULATION ENGINE
+        // ----------------------------------------------------
         window.getProductLiveStats = (prod) => {
-            if(!prod) return { boughtUnits: 0, soldUnits: 0, availableUnits: 0, shopProd: null };
+            if(!prod) return { boughtUnits: 0, soldUnits: 0, productionUnits: 0, availableUnits: 0, availablePacks: 0, remainingPieces: 0, packMultiplier: 1, unitLabel: 'packs', isOutOfStock: true, shopProd: null };
+            
             const pName = (prod.name || '').trim().toLowerCase();
+            const cat = (prod.category || '').toLowerCase();
+            const isEgg = cat.includes('egg') || pName.includes('egg');
+            const packMultiplier = Math.max(1, Number(prod.packQty) || (isEgg ? 30 : 12));
+            const unitLabel = isEgg ? 'crates' : ((prod.unit && prod.unit.toLowerCase().includes('crate')) ? 'crates' : 'packs');
 
+            // 1. Total Bought
             let boughtUnits = 0;
             (marketDb.transactions || []).forEach(t => {
                 (t.items || []).forEach(it => {
                     if((it.productId === prod.id) || (it.name && it.name.trim().toLowerCase() === pName)) {
-                        boughtUnits += (Number(it.qty || 0) * Number(it.packQty || prod.packQty || 1));
+                        boughtUnits += (Number(it.qty || 0) * Number(it.packQty || prod.packQty || packMultiplier));
                     }
                 });
             });
 
-            const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === pName);
-
+            // 2. Total Sold in Shop
             let soldUnits = 0;
             shopSales.forEach(s => {
                 (s.items || []).forEach(si => {
@@ -622,21 +588,286 @@
                 });
             });
 
+            // 3. Total Consumed by Bakery / Kitchen Production
+            let productionUnits = 0;
+            shopProductions.forEach(pr => {
+                const ingredients = pr.ingredients || pr.items || [];
+                ingredients.forEach(ing => {
+                    const ingName = (ing.name || '').trim().toLowerCase();
+                    if (ingName === pName || (prod.id && ing.productId === prod.id)) {
+                        const cratesUsed = Number(ing.crates || ing.packs || 0);
+                        const piecesUsed = Number(ing.units || ing.pieces || ing.qty || 0);
+                        productionUnits += (cratesUsed * (Number(ing.packQty) || packMultiplier)) + piecesUsed;
+                    }
+                });
+            });
+
+            // 4. Live Available Stock
+            const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === pName);
             let availableUnits = 0;
+
             if (shopProd && typeof shopProd.stock === 'number') {
                 const roomStock = Number(shopProd.stock) || 0;
                 const freezerPacks = Number(shopProd.freezerPacks) || 0;
-                const packMultiplier = Number(shopProd.itemsPerPack) || Number(prod.packQty) || 12;
-                const freezerUnits = Math.floor(freezerPacks * packMultiplier);
+                const freezerMultiplier = Number(shopProd.itemsPerPack) || packMultiplier;
+                const freezerUnits = Math.floor(freezerPacks * freezerMultiplier);
                 availableUnits = Math.max(0, roomStock + freezerUnits);
             } else {
-                availableUnits = Math.max(0, boughtUnits - soldUnits);
+                availableUnits = Math.max(0, boughtUnits - soldUnits - productionUnits);
             }
 
-            return { boughtUnits, soldUnits, availableUnits, shopProd };
+            const availablePacks = Math.floor(availableUnits / packMultiplier);
+            const remainingPieces = availableUnits % packMultiplier;
+            const isOutOfStock = availableUnits <= 0;
+
+            return { 
+                boughtUnits, 
+                soldUnits, 
+                productionUnits, 
+                availableUnits, 
+                availablePacks, 
+                remainingPieces, 
+                packMultiplier, 
+                unitLabel, 
+                isOutOfStock, 
+                shopProd 
+            };
         };
 
-        /* Accurately Pro-rates Category Debt to avoid multi-item invoice duplication */
+        // ----------------------------------------------------
+        // TWO-WAY PRODUCTION BRIDGE API
+        // ----------------------------------------------------
+        window.checkStockAvailability = function(productIdentifier) {
+            const query = String(productIdentifier || '').trim().toLowerCase();
+            const prod = (marketDb.products || []).find(p => p.id === productIdentifier || p.name.trim().toLowerCase() === query);
+            
+            if (!prod) {
+                return { 
+                    exists: false, 
+                    availableUnits: 0, 
+                    availablePacks: 0, 
+                    isOutOfStock: true, 
+                    message: `Product "${productIdentifier}" is not registered in Market Catalog.` 
+                };
+            }
+
+            const stats = window.getProductLiveStats(prod);
+            const isOutOfStock = stats.availablePacks <= 0;
+
+            return {
+                exists: true,
+                product: prod,
+                availableUnits: stats.availableUnits,
+                availablePacks: stats.availablePacks,
+                remainingPieces: stats.remainingPieces,
+                packMultiplier: stats.packMultiplier,
+                unitLabel: stats.unitLabel,
+                isOutOfStock: isOutOfStock,
+                message: isOutOfStock 
+                    ? `⚠️ NO ${stats.unitLabel.toUpperCase()} OF ${prod.name.toUpperCase()} AVAILABLE (0 ${stats.unitLabel} in store!)`
+                    : `Available: ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} total units)`
+            };
+        };
+
+        window.deductProductionStock = async function(productIdentifier, cratesToDeduct, piecesToDeduct = 0, batchInfo = "Production Batch") {
+            const query = String(productIdentifier || '').trim().toLowerCase();
+            const prod = (marketDb.products || []).find(p => p.id === productIdentifier || p.name.trim().toLowerCase() === query);
+            
+            const isEgg = query.includes('egg') || (prod && (prod.category || '').toLowerCase().includes('egg'));
+            const packMultiplier = prod ? (Number(prod.packQty) || (isEgg ? 30 : 12)) : (isEgg ? 30 : 12);
+            const totalUnitsToDeduct = (Number(cratesToDeduct || 0) * packMultiplier) + Number(piecesToDeduct || 0);
+
+            const stats = prod ? window.getProductLiveStats(prod) : null;
+            const currentUnits = stats ? stats.availableUnits : 0;
+            const currentCrates = stats ? stats.availablePacks : 0;
+            const unitLabel = isEgg ? 'crates' : 'packs';
+
+            // Guard: Strict Block when Out of Stock
+            if (currentUnits < totalUnitsToDeduct || currentUnits <= 0) {
+                const errorMsg = `❌ STOP: Cannot use ${cratesToDeduct} ${unitLabel} of "${prod ? prod.name : productIdentifier}". Current available in store: ${currentCrates} ${unitLabel}. Store has NO AVAILABLE ${unitLabel.toUpperCase()}!`;
+                alert(errorMsg);
+                return { success: false, error: "OUT_OF_STOCK", availableUnits: currentUnits, availablePacks: currentCrates, message: errorMsg };
+            }
+
+            // Deduct from Firestore Product doc
+            const targetShopProd = shopProducts.find(sp => (prod && sp.id === prod.id) || sp.name.trim().toLowerCase() === query);
+            if (targetShopProd) {
+                try {
+                    await updateDoc(doc(db, "shops", currentBizId, "products", targetShopProd.id), {
+                        stock: increment(-totalUnitsToDeduct)
+                    });
+                } catch(e) { window.showDbError(e, "Deduct Production Stock"); }
+            }
+
+            // Record Production Audit Log
+            try {
+                await addDoc(collection(db, "shops", currentBizId, "productions"), {
+                    timestamp: new Date().toISOString(),
+                    batchInfo: batchInfo,
+                    ingredients: [{
+                        productId: prod ? prod.id : '',
+                        name: prod ? prod.name : productIdentifier,
+                        crates: Number(cratesToDeduct || 0),
+                        pieces: Number(piecesToDeduct || 0),
+                        packQty: packMultiplier,
+                        totalUnits: totalUnitsToDeduct
+                    }],
+                    updatedAt: Date.now()
+                });
+            } catch(e) { window.showDbError(e, "Log Production Usage"); }
+
+            // Broadcast to Mother App and other tabs
+            motherChannel.postMessage({
+                type: 'PRODUCTION_DEDUCTED',
+                productName: prod ? prod.name : productIdentifier,
+                cratesDeducted: cratesToDeduct,
+                unitsDeducted: totalUnitsToDeduct,
+                timestamp: Date.now()
+            });
+
+            window.renderAllMarketViews();
+
+            const remainingPacks = Math.max(0, currentCrates - cratesToDeduct);
+            return {
+                success: true,
+                remainingUnits: currentUnits - totalUnitsToDeduct,
+                remainingPacks: remainingPacks,
+                message: `Deducted ${cratesToDeduct} ${unitLabel}. Remaining in store: ${remainingPacks} ${unitLabel}.`
+            };
+        };
+
+        // Listen for requests from other tabs/iframes
+        motherChannel.onmessage = (event) => {
+            const data = event.data;
+            if (data && (data.type === 'PRODUCTION_DEDUCTED' || data.type === 'REFRESH_INVENTORY')) {
+                window.renderAllMarketViews();
+            }
+        };
+
+        window.addEventListener('message', async (e) => {
+            if (e.data && e.data.type === 'CHECK_STOCK_REQ') {
+                const res = window.checkStockAvailability(e.data.productName);
+                if (e.source) e.source.postMessage({ type: 'CHECK_STOCK_RES', ...res, reqId: e.data.reqId }, '*');
+            } else if (e.data && e.data.type === 'DEDUCT_PRODUCTION_REQ') {
+                const res = await window.deductProductionStock(e.data.productName, e.data.crates, e.data.pieces, e.data.batchInfo);
+                if (e.source) e.source.postMessage({ type: 'DEDUCT_PRODUCTION_RES', ...res, reqId: e.data.reqId }, '*');
+            }
+        });
+
+        // ----------------------------------------------------
+        // UI RENDERING & OUT OF STOCK NOTIFICATION BANNERS
+        // ----------------------------------------------------
+        window.renderOutOfStockBanner = () => {
+            const banner = document.getElementById('mkt-out-of-stock-banner');
+            if (!banner) return;
+
+            const outOfStockItems = [];
+            (marketDb.products || []).forEach(p => {
+                const stats = window.getProductLiveStats(p);
+                if (stats.availablePacks <= 0) {
+                    outOfStockItems.push({
+                        id: p.id,
+                        name: p.name,
+                        unitLabel: stats.unitLabel,
+                        availableUnits: stats.availableUnits
+                    });
+                }
+            });
+
+            if (outOfStockItems.length > 0) {
+                banner.innerHTML = `
+                    <div style="font-weight:bold; font-size:14px; margin-bottom:5px;">🚨 URGENT OUT-OF-STOCK ALERT:</div>
+                    <div>The following products have <b>0 available crates/packs</b>. Bakery Production cannot proceed until restocked:</div>
+                    <ul style="margin:6px 0 8px 18px; padding:0;">
+                        ${outOfStockItems.map(it => `<li><b>${esc(it.name)}:</b> <span style="color:#b91c1c; font-weight:bold;">NO ${it.unitLabel.toUpperCase()} AVAILABLE (${it.availableUnits} pcs)</span></li>`).join('')}
+                    </ul>
+                    <button class="btn-red btn-tbl" onclick="window.autoAddOutOfStockToNeeds()" style="font-size:12px; padding:6px 12px; margin-top:4px;">➕ Auto-Add Exhausted Items to Shopping List</button>
+                `;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        };
+
+        window.autoAddOutOfStockToNeeds = () => {
+            let addedCount = 0;
+            (marketDb.products || []).forEach(p => {
+                const stats = window.getProductLiveStats(p);
+                if (stats.availablePacks <= 0) {
+                    const alreadyInNeeds = (marketDb.needs || []).some(n => n.productId === p.id && n.status === 'pending');
+                    if (!alreadyInNeeds) {
+                        marketDb.needs = marketDb.needs || [];
+                        marketDb.needs.push({
+                            id: 'need_' + Date.now() + Math.random().toString(36).slice(2,5),
+                            productId: p.id,
+                            supplierId: p.supplierId || (marketDb.suppliers[0]?.id || ''),
+                            qty: 5, // default restock batch of 5 crates
+                            status: 'pending',
+                            updatedAt: Date.now(),
+                            date: new Date().toISOString()
+                        });
+                        addedCount++;
+                    }
+                }
+            });
+
+            if (addedCount > 0) {
+                window.saveMarketState(true);
+                alert(`✅ Added ${addedCount} exhausted product(s) to Market Shopping List with 5 crates recommended!`);
+                showMktPage('mkt-needs');
+                window.renderNeeds();
+            } else {
+                alert("All exhausted items are already present in your Market Shopping List!");
+            }
+        };
+
+        window.renderOrderGoodsList = () => {
+            const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+            const cat = document.getElementById('orderCategoryFilter')?.value;
+            const tbody = document.getElementById('orderGoodsTableBody');
+            if(!tbody) return;
+
+            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
+            
+            tbody.innerHTML = list.length ? list.map(p => {
+                const st = markedOrderState[p.id], chk = Boolean(st && st.checked), sup = chk ? supplier(st.supplierId) : null;
+                const stats = window.getProductLiveStats(p);
+
+                let availBadgeHtml = '';
+                if (stats.availablePacks <= 0) {
+                    availBadgeHtml = `<span class="badge stock-badge-red" style="font-size:11px; padding:4px 8px;">🚫 0 ${stats.unitLabel} (OUT OF STOCK)</span>`;
+                } else if (stats.availablePacks < 3) {
+                    availBadgeHtml = `<span class="badge stock-badge-orange" style="font-size:11px; padding:4px 8px;">⚠️ ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)</span>`;
+                } else {
+                    availBadgeHtml = `<span class="badge stock-badge-green" style="font-size:11px; padding:4px 8px;">✅ ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)</span>`;
+                }
+
+                return `<tr style="${chk ? 'background:#f4f3ff;' : (stats.availablePacks <= 0 ? 'background:#fff5f5;' : '')}">
+                    <td style="text-align:center"><input type="checkbox" ${chk?'checked':''} onchange="window.handleOrderCheckClick('${p.id}', this.checked)"></td>
+                    <td>
+                        <b>${esc(p.name)}</b>
+                        ${stats.availablePacks <= 0 ? '<br><small style="color:#b91c1c; font-weight:bold;">⚠️ RESTOCK URGENT</small>' : ''}
+                    </td>
+                    <td style="text-align:center"><span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${esc(p.unit||'Pack')} (${p.packQty||stats.packMultiplier} pcs)</span></td>
+                    <td style="text-align:center; font-weight:700;">${Math.floor(stats.boughtUnits / stats.packMultiplier)} ${stats.unitLabel} (${stats.boughtUnits} pcs)</td>
+                    <td style="text-align:center; font-weight:700; color:#0284c7;">${Math.floor((stats.soldUnits + stats.productionUnits) / stats.packMultiplier)} ${stats.unitLabel} (${stats.soldUnits + stats.productionUnits} pcs)</td>
+                    <td style="text-align:center;">${availBadgeHtml}</td>
+                    <td class="admin-only"><b>${money(p.cost)}</b></td>
+                    <td>${money(p.sell)}</td>
+                    <td>${chk ? `<span class="clickable" onclick="window.handleOrderCheckClick('${p.id}', true)">${esc(sup?.name||'Select Supplier')} ✏️</span>` : '<small style="color:#888;">Check to order</small>'}</td>
+                    <td style="text-align:center">${chk ? `<input type="number" min="1" value="${st.qty||1}" style="width:65px; margin:0; padding:4px;" oninput="window.changeOrderQty('${p.id}', this.value)">` : '—'}</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
+                        <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="11" style="text-align:center; padding:15px; color:#999;">No products registered in catalog.</td></tr>';
+
+            window.updateLiveOrderBar();
+            window.renderCategoryDebtCaution();
+            window.renderOutOfStockBanner();
+        };
+
         window.renderCategoryDebtCaution = () => {
             const banner = document.getElementById('mkt-category-debt-banner');
             if (!banner) return;
@@ -665,12 +896,11 @@
             (marketDb.products || []).forEach(p => {
                 const cat = p.category || 'General';
                 const stats = window.getProductLiveStats(p);
-                const packMultiplier = Number(p.packQty) || (cat.toLowerCase().includes('egg') ? 30 : 12);
                 const remainingUnits = stats.availableUnits;
                 const value = remainingUnits * (Number(p.sell) || 0);
                 
                 categoryStockValue[cat] = (categoryStockValue[cat] || 0) + value;
-                categoryRemainingPacks[cat] = (categoryRemainingPacks[cat] || 0) + Math.floor(remainingUnits / packMultiplier);
+                categoryRemainingPacks[cat] = (categoryRemainingPacks[cat] || 0) + stats.availablePacks;
             });
 
             const warnings = [];
@@ -683,7 +913,7 @@
                 if (debt > 0 && value < debt) {
                     warnings.push(`
                         <div style="margin-bottom:6px;">
-                            ⚠️ <b>CAUTION (${cat}):</b> Unsold stock is down to <b>${packs} ${unitLabel}</b> (Worth <b>${money(value)}</b>), but you owe supplier <b>${money(debt)}</b>! Remaining stock cannot clear debt. Immediate supplier payment required.
+                            ⚠️ <b>CAUTION (${cat}):</b> Unsold stock is down to <b>${packs} ${unitLabel}</b> (Worth <b>${money(value)}</b>), but you owe supplier <b>${money(debt)}</b>! Remaining stock cannot clear debt.
                         </div>
                     `);
                 }
@@ -695,41 +925,6 @@
             } else {
                 banner.style.display = 'none';
             }
-        };
-
-        window.renderOrderGoodsList = () => {
-            const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
-            const cat = document.getElementById('orderCategoryFilter')?.value;
-            const tbody = document.getElementById('orderGoodsTableBody');
-            if(!tbody) return;
-
-            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
-            
-            tbody.innerHTML = list.length ? list.map(p => {
-                const st = markedOrderState[p.id], chk = Boolean(st && st.checked), sup = chk ? supplier(st.supplierId) : null;
-                const stats = window.getProductLiveStats(p);
-                let availBadge = stats.availableUnits <= 0 ? 'stock-badge-red' : (stats.availableUnits < 5 ? 'stock-badge-orange' : 'stock-badge-green');
-
-                return `<tr style="${chk ? 'background:#f4f3ff;' : ''}">
-                    <td style="text-align:center"><input type="checkbox" ${chk?'checked':''} onchange="window.handleOrderCheckClick('${p.id}', this.checked)"></td>
-                    <td><b>${esc(p.name)}</b></td>
-                    <td style="text-align:center"><span class="badge ${p.unit==='Big'?'size-big':'size-small'}">${p.unit}</span></td>
-                    <td style="text-align:center; font-weight:700;">${stats.boughtUnits} pcs</td>
-                    <td style="text-align:center; font-weight:700; color:#0284c7;">${stats.soldUnits} pcs</td>
-                    <td style="text-align:center;"><span class="badge ${availBadge}">${stats.availableUnits} pcs</span></td>
-                    <td class="admin-only"><b>${money(p.cost)}</b></td>
-                    <td>${money(p.sell)}</td>
-                    <td>${chk ? `<span class="clickable" onclick="window.handleOrderCheckClick('${p.id}', true)">${esc(sup?.name||'Select Supplier')} ✏️</span>` : '<small style="color:#888;">Check to order</small>'}</td>
-                    <td style="text-align:center">${chk ? `<input type="number" min="1" value="${st.qty||1}" style="width:65px; margin:0; padding:4px;" oninput="window.changeOrderQty('${p.id}', this.value)">` : '—'}</td>
-                    <td style="text-align:center; white-space:nowrap;">
-                        <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
-                        <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">🗑️</button>
-                    </td>
-                </tr>`;
-            }).join('') : '<tr><td colspan="11" style="text-align:center; padding:15px; color:#999;">No products registered in catalog.</td></tr>';
-
-            window.updateLiveOrderBar();
-            window.renderCategoryDebtCaution();
         };
 
         window.handleOrderCheckClick = (id, chk) => {
@@ -792,7 +987,7 @@
                     }
                 }
             });
-            document.getElementById('liveMarkedCount').textContent = `${items} items (${units} pks)`;
+            document.getElementById('liveMarkedCount').textContent = `${items} items (${units} pks/crates)`;
             document.getElementById('liveTotalCost').textContent = money(cost);
             document.getElementById('liveTotalProfit').textContent = money(profit);
         };
@@ -855,7 +1050,7 @@
             div.className = 'product-line';
             div.innerHTML = `<div class="product-line-grid">
                 <div class="wide"><label style="font-size:11px;">Product</label><select class="tx-product" onchange="window.calculateTransaction()" required></select></div>
-                <div><label style="font-size:11px;">Packs/Qty</label><input class="tx-qty" type="number" min="1" value="${qty}" oninput="window.calculateTransaction()" required></div>
+                <div><label style="font-size:11px;">Crates/Packs</label><input class="tx-qty" type="number" min="1" value="${qty}" oninput="window.calculateTransaction()" required></div>
                 <div class="admin-only"><label style="font-size:11px;">Cost/Pk (₦)</label><input class="tx-cost" type="number" readonly style="background:#f8fafc;"></div>
                 <div class="admin-only"><label style="font-size:11px;">Total (₦)</label><input class="tx-line-total" type="number" readonly style="background:#f8fafc; font-weight:bold;"></div>
                 <button type="button" class="btn-red btn-tbl" onclick="this.closest('.product-line').remove(); window.calculateTransaction();">✕</button>
@@ -863,7 +1058,7 @@
             wrap.appendChild(div);
             
             const sel = div.querySelector('.tx-product');
-            sel.innerHTML = '<option value="">-- Choose Product --</option>' + (marketDb.products || []).map(p => `<option value="${p.id}">${esc(p.name)} [${p.unit}] ${!isStaffRole ? '- ' + money(p.cost) : ''}</option>`).join('');
+            sel.innerHTML = '<option value="">-- Choose Product --</option>' + (marketDb.products || []).map(p => `<option value="${p.id}">${esc(p.name)} [${p.unit || 'Pack'}] ${!isStaffRole ? '- ' + money(p.cost) : ''}</option>`).join('');
             if(selectedId) sel.value = selectedId;
             window.calculateTransaction();
         };
@@ -923,7 +1118,7 @@
                     const pSell = Number(p.sell) || 0;
                     const pPackQty = Math.max(1, Number(p.packQty) || 1);
                     const line = pCost * q;
-                    items.push({ productId: p.id, name: p.name, unit: p.unit, category: p.category || 'General', qty: q, cost: pCost, packQty: pPackQty, sell: pSell, lineTotal: line });
+                    items.push({ productId: p.id, name: p.name, unit: p.unit || 'Pack', category: p.category || 'General', qty: q, cost: pCost, packQty: pPackQty, sell: pSell, lineTotal: line });
                     total += line;
                     profit += (((pSell * pPackQty) - pCost) * q);
                 }
@@ -942,10 +1137,8 @@
                         const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === (oldIt.name || '').trim().toLowerCase());
                         if (matchShop) {
                             const curStock = Number(matchShop.stock) || 0;
-                            const curInit = Number(matchShop.initStock) || curStock;
                             await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
-                                stock: Math.max(0, curStock - oldPieces),
-                                initStock: Math.max(0, curInit - oldPieces)
+                                stock: Math.max(0, curStock - oldPieces)
                             });
                         }
                     }
@@ -980,7 +1173,7 @@
 
             await window.saveMarketState(true);
 
-            // Refill shop stock in Firestore
+            // Refill store stock in Firestore
             for(const it of items) {
                 const totalPieces = it.qty * (it.packQty || 1);
                 const targetName = it.name.trim().toLowerCase();
@@ -998,13 +1191,16 @@
                         const docId = targetName.replace(/[^a-z0-9]/g, '_');
                         await setDoc(doc(db, "shops", currentBizId, "products", docId), {
                             name: it.name, category: it.category || 'General', price: it.sell, cost: it.cost,
-                            stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 12, barcode: '', expiryDate: ''
+                            stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 30, barcode: '', expiryDate: ''
                         }, { merge: true });
                     }
                 } catch(err) { window.showDbError(err, "Inventory Refill"); }
             }
 
-            alert(`✅ Purchase Saved & Synced! Shop inventory adjusted.`);
+            // Broadcast to Mother App & Production tab
+            motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
+
+            alert(`✅ Purchase Saved & Synced! Available crates & inventory refilled.`);
             window.cancelEditingTransaction();
             window.renderAllMarketViews();
             showMktPage('mkt-history');
@@ -1049,7 +1245,7 @@
             const t = (marketDb.transactions || []).find(x => x.id === txId);
             if (!t) return;
 
-            if (!confirm(`Delete purchase from ${supplier(t.supplierId)?.name || 'Supplier'}?\nThis will deduct the refilled quantities from Shop Selling Stock!`)) return;
+            if (!confirm(`Delete purchase from ${supplier(t.supplierId)?.name || 'Supplier'}?\nThis will deduct the refilled quantities from store inventory!`)) return;
 
             try {
                 for(const it of (t.items || [])) {
@@ -1058,8 +1254,7 @@
                     const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
                     if (shopProd) {
                         await updateDoc(doc(db, "shops", currentBizId, "products", shopProd.id), {
-                            stock: Math.max(0, (shopProd.stock || 0) - totalPieces),
-                            initStock: Math.max(0, (shopProd.initStock || shopProd.stock || 0) - totalPieces)
+                            stock: Math.max(0, (shopProd.stock || 0) - totalPieces)
                         });
                     }
                 }
@@ -1069,12 +1264,12 @@
                 marketDb.deletedIds.push(txId);
 
                 await window.saveMarketState(true);
+                motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
                 window.renderAllMarketViews();
-                alert("Purchase deleted and stock safely reduced in Shop.");
+                alert("Purchase deleted and stock safely reduced.");
             } catch(e) { window.showDbError(e, "Delete Purchase"); }
         };
 
-        /* Fine-grained Edit/Delete for Items inside Purchases */
         window.openEditGoodsBought = (txId, itemIdx) => {
             const t = (marketDb.transactions || []).find(x => x.id === txId);
             if (!t || !t.items || !t.items[itemIdx]) return;
@@ -1115,14 +1310,13 @@
             const newSell = Math.max(0, parseFloat(document.getElementById('egb-sell').value) || 0);
 
             const newPieces = newPacks * newPackQty;
-            const newLineTotal = newPacks * newCost;
             const diffPieces = newPieces - oldPieces;
 
             it.qty = newPacks;
             it.packQty = newPackQty;
             it.cost = newCost;
             it.sell = newSell;
-            it.lineTotal = newLineTotal;
+            it.lineTotal = newPacks * newCost;
             
             const supVal = document.getElementById('egb-supplier').value;
             if (supVal) t.supplierId = supVal;
@@ -1136,16 +1330,16 @@
             const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
             if (shopProd) {
                 const newStock = Math.max(0, (shopProd.stock || 0) + diffPieces);
-                const newInit = Math.max(0, (shopProd.initStock || shopProd.stock || 0) + diffPieces);
                 await updateDoc(doc(db, "shops", currentBizId, "products", shopProd.id), {
-                    stock: newStock, initStock: newInit, price: newSell, cost: newCost
+                    stock: newStock, price: newSell, cost: newCost
                 });
             }
 
             await window.saveMarketState(true);
             document.getElementById('mod-edit-goods-bought').style.display = 'none';
+            motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
             window.renderAllMarketViews();
-            alert(`✅ Item updated and shop selling stock synced!`);
+            alert(`✅ Item updated and store stock synced!`);
         };
 
         window.deleteGoodsBoughtItem = async (txId, itemIdx) => {
@@ -1154,15 +1348,14 @@
             const it = t.items[itemIdx];
             const totalPieces = Number(it.qty || 1) * Number(it.packQty || 1);
             
-            if (!confirm(`Delete purchase of "${it.name}"? This will deduct ${totalPieces} pcs from shop selling stock.`)) return;
+            if (!confirm(`Delete purchase of "${it.name}"? This will deduct ${totalPieces} pcs from store stock.`)) return;
 
             try {
                 const targetName = (it.name || '').trim().toLowerCase();
                 const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
                 if (shopProd) {
                     await updateDoc(doc(db, "shops", currentBizId, "products", shopProd.id), {
-                        stock: Math.max(0, (shopProd.stock || 0) - totalPieces),
-                        initStock: Math.max(0, (shopProd.initStock || shopProd.stock || 0) - totalPieces)
+                        stock: Math.max(0, (shopProd.stock || 0) - totalPieces)
                     });
                 }
 
@@ -1179,6 +1372,7 @@
                 }
 
                 await window.saveMarketState(true);
+                motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
                 window.renderAllMarketViews();
             } catch(err) {
                 alert("Error deleting item: " + err.message);
@@ -1202,8 +1396,13 @@
             div.innerHTML = list.length ? list.map(n => {
                 const p = (marketDb.products || []).find(x => x.id === n.productId);
                 const s = supplier(n.supplierId);
+                const stats = window.getProductLiveStats(p);
                 return `<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                    <div><b>${esc(p?.name)}</b> <span class="badge size-small">${p?.unit}</span><br><small style="color:#777;">Supplier: ${esc(s?.name)} | Qty: <b>${n.qty} pks</b></small></div>
+                    <div>
+                        <b>${esc(p?.name)}</b> <span class="badge ${p?.unit==='Crate'?'size-big':'size-small'}">${p?.unit||'Pack'}</span>
+                        ${stats.availablePacks <= 0 ? '<span class="badge stock-badge-red" style="margin-left:4px;">0 in Store</span>' : ''}
+                        <br><small style="color:#777;">Supplier: ${esc(s?.name || 'Any')} | Order Qty: <b>${n.qty} ${stats.unitLabel}</b></small>
+                    </div>
                     <div><button class="btn-green btn-tbl" onclick="window.buyNeedItem('${n.id}')">Buy</button> <button class="btn-red btn-tbl" onclick="window.deleteNeedItem('${n.id}')">✕</button></div>
                 </div>`;
             }).join('') : '<p style="text-align:center; color:#999; padding:15px;">Shopping list is clear.</p>';
@@ -1245,7 +1444,7 @@
                 const s = supplier(t.supplierId);
                 let itemsListHtml = (t.items || []).map((it, idx) => `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px dashed #eee; font-size:12px;">
-                        <span>• <b>${esc(it.name)}</b>: ${it.qty} pks (${it.qty * (it.packQty||1)} pcs)</span>
+                        <span>• <b>${esc(it.name)}</b>: ${it.qty} pks/crates (${it.qty * (it.packQty||1)} pcs)</span>
                         <div style="display:flex; gap:3px;">
                             <button class="btn-orange btn-mini admin-only" onclick="window.openEditGoodsBought('${t.id}', ${idx})">✏️ Edit</button>
                             <button class="btn-red btn-mini admin-only" onclick="window.deleteGoodsBoughtItem('${t.id}', ${idx})">🗑️</button>
@@ -1422,13 +1621,15 @@
                 return `<div class="card" style="margin-bottom:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <b>${esc(p.name)}</b> <span class="badge size-small">${p.unit}</span>
+                            <b>${esc(p.name)}</b> <span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${p.unit||'Pack'} (${p.packQty} pcs)</span>
                             <div style="font-size:12px; color:#555; margin-top:3px;">
                                 <span class="admin-only">Wholesale: ${money(p.cost)} | </span>Retail: ${money(p.sell)} <span class="admin-only">| Est. Profit: <b class="text-green">+${money((p.sell*(p.packQty||1))-p.cost)}</b></span>
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <span class="badge stock-badge-green">${stats.availableUnits} Available</span>
+                            <span class="badge ${stats.availablePacks<=0?'stock-badge-red':(stats.availablePacks<3?'stock-badge-orange':'stock-badge-green')}">
+                                ${stats.availablePacks <= 0 ? '0 CRATES (OUT OF STOCK)' : `${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)`}
+                            </span>
                             <div style="margin-top:5px; display:flex; gap:4px; justify-content:flex-end;">
                                 <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
                                 <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">Del</button>
@@ -1444,9 +1645,9 @@
             document.getElementById('mktProductId').value = '';
             document.getElementById('mpName').value = '';
             document.getElementById('mpCost').value = '';
-            document.getElementById('mpPackQty').value = '1';
+            document.getElementById('mpPackQty').value = '30';
             document.getElementById('mpSell').value = '';
-            document.getElementById('mpUnit').value = 'Big';
+            document.getElementById('mpUnit').value = 'Crate';
             window.populateSupplierSelects();
             document.getElementById('marketProductModal').style.display = 'flex';
         };
@@ -1460,9 +1661,9 @@
             document.getElementById('mpName').value = p.name || '';
             document.getElementById('mpSupplier').value = p.supplierId || '';
             document.getElementById('mpCategory').value = p.category || (marketDb.categories && marketDb.categories[0]) || '';
-            document.getElementById('mpUnit').value = p.unit || 'Big';
+            document.getElementById('mpUnit').value = p.unit || 'Crate';
             document.getElementById('mpCost').value = p.cost !== undefined ? p.cost : '';
-            document.getElementById('mpPackQty').value = p.packQty || 1;
+            document.getElementById('mpPackQty').value = p.packQty || 30;
             document.getElementById('mpSell').value = p.sell !== undefined ? p.sell : '';
             document.getElementById('marketProductModal').style.display = 'flex';
         };
@@ -1487,7 +1688,6 @@
                     const oldNameLower = (oldProd.name || '').trim().toLowerCase();
                     marketDb.products[existingIdx] = { ...marketDb.products[existingIdx], name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() };
 
-                    // Sync changes directly into the shop POS product doc
                     const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === oldNameLower);
                     if (matchShop) {
                         try {
@@ -1564,7 +1764,7 @@
                     <div style="padding:10px 12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <b>${idx + 1}. ${esc(name)}</b><br>
-                            <small style="color:#667085;">Total Purchased: ${val.packs} packs</small>
+                            <small style="color:#667085;">Total Purchased: ${val.packs} crates/pks</small>
                         </div>
                         <b class="text-green">+${money(val.profit)}</b>
                     </div>
@@ -1587,7 +1787,7 @@
                         new Date(t.date).toLocaleDateString(),
                         s?.name || 'Supplier',
                         it.name,
-                        `${it.qty} pks (${it.qty * (it.packQty||1)} pcs)`,
+                        `${it.qty} pks/crates (${it.qty * (it.packQty||1)} pcs)`,
                         money(it.lineTotal),
                         t.status === 'paid' ? 'Paid' : `Owed (${money(t.balance)})`
                     ]);
@@ -1637,9 +1837,9 @@
             tbody.innerHTML = items.length ? items.map((it, idx) => `<tr>
                 <td style="text-align:center;">${idx+1}</td>
                 <td><b>${esc(it.p?.name)}</b></td>
-                <td style="text-align:center;"><span class="badge ${it.p?.unit==='Big'?'size-big':'size-small'}">${it.p?.unit}</span></td>
+                <td style="text-align:center;"><span class="badge ${it.p?.unit==='Crate'?'size-big':'size-small'}">${it.p?.unit || 'Pack'}</span></td>
                 <td style="text-align:center;">${esc(it.p?.category || 'General')}</td>
-                <td style="text-align:center; font-weight:bold;">${it.q} packs</td>
+                <td style="text-align:center; font-weight:bold;">${it.q} ${it.p?.unit==='Crate'?'crates':'packs'}</td>
             </tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding:15px; color:#999;">No marked products for this supplier.</td></tr>';
         };
 
@@ -1707,6 +1907,7 @@
 
         window.renderAllMarketViews = () => {
             window.populateSupplierSelects();
+            window.renderOutOfStockBanner();
             window.renderCategoryDebtCaution();
             window.renderOrderGoodsList();
             window.renderNeeds();
@@ -1753,12 +1954,6 @@
                 currentShopMeta = snap.data();
                 const topShop = document.getElementById('topShopName');
                 if (topShop) topShop.innerText = currentShopMeta.name || marketDb.shop.name || currentBizId;
-                
-                const isPrem = currentShopMeta.plan === 'premium';
-                if (!isPrem) {
-                    alert("🔒 The Market Buyer Workspace requires a Premium Plan. Returning to Shop Manager.");
-                    window.location.href = 'Business%20manager%20app.html#sec-dash';
-                }
             }
         }, err => window.showDbError(err, "ShopMeta"));
 
@@ -1772,16 +1967,22 @@
 
         onSnapshot(collection(db, "shops", currentBizId, "products"), (snap) => {
             shopProducts = snap.docs.filter(d => d.id !== '_backup').map(d => ({ id: d.id, ...d.data() }));
-            window.renderOrderGoodsList();
-            window.renderMarketProducts();
+            window.renderAllMarketViews();
         }, err => window.showDbError(err, "Products Sync"));
 
         onSnapshot(collection(db, "shops", currentBizId, "sales"), (snap) => {
             shopSales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderOrderGoodsList();
+            window.renderAllMarketViews();
         }, err => window.showDbError(err, "Sales Sync"));
+
+        // Live Listener to Bakery / Kitchen Production Records
+        onSnapshot(collection(db, "shops", currentBizId, "productions"), (snap) => {
+            shopProductions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            window.renderAllMarketViews();
+        }, err => window.showDbError(err, "Productions Sync"));
 
         window.renderAllMarketViews();
     </script>
 </body>
 </html>
+
