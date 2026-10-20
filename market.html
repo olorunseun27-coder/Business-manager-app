@@ -26,7 +26,6 @@
             --shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
         
-        /* Strict Staff Privacy: Controlled exclusively by Business Manager */
         body.is-staff .admin-only { display: none !important; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; user-select: none; color: var(--text); }
         *{ box-sizing: border-box; }
@@ -72,18 +71,17 @@
         input:focus, select:focus, textarea:focus { border-color: #0d47a1; outline: none; background: white; }
         button { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; color: white; margin-bottom: 5px; transition: 0.2s; font-family: inherit; }
         .btn-green { background: #2e7d32; } .btn-blue { background: #1565c0; } .btn-red { background: #c62828; } .btn-orange { background: #ef6c00; } .btn-dark { background: #37474f; } .btn-whatsapp { background: #25d366; color: white; }
-        .btn-purple { background: #7c3aed; }
         .btn-tbl { padding: 5px 9px; font-size: 11px; border-radius: 4px; margin: 2px; width: auto; display: inline-block; }
         .btn-mini { padding: 3px 8px; width: auto; display: inline-block; margin: 0 2px; border-radius: 4px; font-size: 12px; }
         
-        /* Badges & Text */
+        /* Badges */
         .badge { font-size: 10px; padding: 4px 8px; border-radius: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; text-align: center; }
-        .bg-full { background: #d4edda; color: #155724; } .bg-part { background: #fff3cd; color: #856404; } .bg-over { background: #f8d7da; color: #721c24; }
+        .bg-full { background: #d4edda; color: #155724; } .bg-over { background: #f8d7da; color: #721c24; }
         .stock-badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .stock-badge-orange { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
         .stock-badge-red { background: #fee2e2; color: #b91c1c; border: 1.5px solid #ef4444; }
         .size-big { background: #e0e7ff; color: #3730a3; } .size-small { background: #fef3f2; color: #b42318; }
-        .text-green { color: #28a745; } .text-red { color: #dc3545; } .text-blue { color: #007bff; }
+        .text-green { color: #28a745; } .text-red { color: #dc3545; }
         
         /* Modals */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:99999; align-items:center; justify-content:center; }
@@ -111,7 +109,6 @@
         </header>
 
         <div class="container">
-            <!-- Sub-Pages Navigation -->
             <div class="mkt-sub-nav">
                 <button class="mkt-sub-btn active" onclick="showMktPage('mkt-order')">🛒 Mark to Order</button>
                 <button class="mkt-sub-btn" onclick="showMktPage('mkt-needs')">📋 Shopping List</button>
@@ -126,14 +123,11 @@
             <!-- SUB-PAGE 1: MARK PRODUCTS TO ORDER -->
             <div id="mkt-order" class="mkt-page active-page">
                 <div class="card">
-                    <!-- Urgent Out-of-Stock Alert Banner (Connected to Production) -->
                     <div id="mkt-out-of-stock-banner" style="display:none; background:#fef2f2; border:1.8px solid #ef4444; border-radius:10px; padding:12px 14px; margin-bottom:15px; color:#991b1b; font-size:13px; line-height:1.5;"></div>
-
-                    <!-- Category Debt Caution Banner -->
                     <div id="mkt-category-debt-banner" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 14px; margin-bottom:15px; color:#92400e; font-size:13px; line-height:1.5;"></div>
 
                     <h3 style="margin-top:0;">🛒 Mark Products to Order</h3>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Synced with <b>Bakery Production Record</b> and Shop Stock: Total Bought, Production/Shop Sold, and Remaining Available Crates/Packs.</p>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Live Synced with Bakery Production Record: Available Crates &amp; Packs update in real-time.</p>
                     
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
                         <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="window.renderOrderGoodsList()" style="flex:2; margin:0;">
@@ -181,14 +175,11 @@
             <div id="mkt-needs" class="mkt-page">
                 <div class="card">
                     <h3 style="margin-top:0;">📋 Market Shopping List</h3>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Send confidential price-free order slips to suppliers or fulfill items stall-by-stall.</p>
-                    
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
                         <input id="needSearch" placeholder="🔍 Search item, supplier, category..." oninput="window.renderNeeds()" style="flex:2; margin:0;">
                         <select id="needSupplierFilter" onchange="window.renderNeeds()" style="flex:1; margin:0;"><option value="">All Suppliers</option></select>
                         <button class="btn-whatsapp" onclick="window.openOrderVoucherModal('needs')" style="width:auto; margin:0; padding:8px 12px; font-size:13px;">💬 WhatsApp Slip</button>
                     </div>
-
                     <div id="needsList"></div>
                 </div>
             </div>
@@ -197,9 +188,9 @@
             <div id="mkt-buy" class="mkt-page">
                 <div class="card">
                     <h3 id="txFormTitle" style="margin-top:0;">📦 Record Market Purchase</h3>
-                    <p style="font-size:12px; color:#667085; margin-top:0;">Purchases logged here <b>immediately refill store stock</b> for both Production recipes and main selling tabs!</p>
+                    <p style="font-size:12px; color:#667085; margin-top:0;">Purchases logged here <b>immediately refill store stock</b> for Production recipes and Shop shelf!</p>
                     
-                    <form id="transactionForm" onsubmit="window.saveTransaction(event)">
+                    <form id="transactionForm" onsubmit="event.preventDefault(); window.saveTransaction();">
                         <input type="hidden" id="editingTxId">
                         
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -225,7 +216,7 @@
 
                         <div id="transactionSummary" class="admin-only" style="background:#e3f2fd; padding:10px; border-radius:8px; margin:10px 0; font-size:13px;">Add products to calculate totals.</div>
                         <div style="display:flex; gap:8px;">
-                            <button class="btn-green" type="submit" id="btnSaveTx" style="flex:2;">💾 Save &amp; Sync Across All Devices</button>
+                            <button class="btn-green" type="button" id="btnSaveTx" onclick="window.saveTransaction()" style="flex:2;">💾 Save &amp; Sync Across All Devices</button>
                             <button class="btn-dark" type="button" id="btnCancelEditTx" style="flex:1; display:none;" onclick="window.cancelEditingTransaction()">Cancel Edit</button>
                         </div>
                     </form>
@@ -315,7 +306,7 @@
     <!-- MODAL 1: PURCHASE ORDER SLIP (WHATSAPP & PNG) -->
     <div class="modal" id="orderVoucherModal"><div class="modal-content" style="max-width: 550px;">
         <h3>Supplier Purchase Order Slip</h3>
-        <p style="font-size:11px; color:#166534; background:#f0fdf4; padding:8px; border-radius:6px; margin-bottom: 12px;">🔒 Confidential Slip: Product names and quantities only. Wholesale costs and retail profit are completely hidden.</p>
+        <p style="font-size:11px; color:#166534; background:#f0fdf4; padding:8px; border-radius:6px; margin-bottom: 12px;">🔒 Confidential Slip: Product names and quantities only.</p>
         
         <label style="font-size:12px; font-weight:bold;">Filter by Supplier:</label>
         <select id="voucherSupplierFilter" onchange="window.renderOrderVoucherContent()"></select>
@@ -419,7 +410,7 @@
         <button class="btn-red" onclick="closeModals()">Cancel</button>
     </div></div>
 
-    <!-- MODAL 6: EDIT GOODS BOUGHT -->
+    <!-- MODAL 6: EDIT GOODS BOUGHT (LINE ITEM EDITOR) -->
     <div id="mod-edit-goods-bought" class="modal">
         <div class="modal-content" style="max-width: 480px;">
             <h3 style="margin-top:0; color:#0d47a1;">✏️ Edit Goods Bought</h3>
@@ -483,10 +474,10 @@
         });
     </script>
 
-    <!-- Complete Market & Production Firebase Bridge Module -->
+    <!-- Complete Market Firebase Integration Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy, limit, increment, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const shopConfig = { 
             apiKey: "AIzaSyCqmaIDptWNk8v5E5Sz5XKKSAmk6FNX6Yo", 
@@ -500,16 +491,29 @@
         const app = initializeApp(shopConfig);
         const db = getFirestore(app);
 
-        let currentBizId = (localStorage.getItem('starbite_active_biz_id') || '').trim();
+        let currentBizId = '';
+        try {
+            currentBizId = (
+                (window.parent && window.parent.currentBizId) ||
+                (window.parent && window.parent.localStorage ? window.parent.localStorage.getItem('starbite_active_biz_id') : '') ||
+                localStorage.getItem('starbite_active_biz_id') || 
+                new URLSearchParams(window.location.search).get('biz') ||
+                ''
+            ).trim();
+        } catch (e) {
+            currentBizId = (localStorage.getItem('starbite_active_biz_id') || '').trim();
+        }
+
         let isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
 
-        if (!currentBizId) {
+        if (!currentBizId && window.self === window.top) {
             window.location.href = 'Business%20manager%20app.html';
         }
 
-        // Shared Mother-App Channel for Instant Cross-Tab Communication
-        const motherChannel = new BroadcastChannel('starbite_inventory_channel_' + currentBizId);
-        window.starbiteMotherChannel = motherChannel;
+        let motherChannel = null;
+        try {
+            motherChannel = new BroadcastChannel('starbite_inventory_channel_' + currentBizId);
+        } catch(e) { console.warn("BroadcastChannel unavailable"); }
 
         window.showDbError = (err, context = "Market Database") => {
             console.warn(`Firestore [${context}]:`, err.message);
@@ -528,8 +532,6 @@
         let markedOrderState = {};
         let shopProducts = [];
         let shopSales = [];
-        let shopProductions = [];
-        let currentShopMeta = null;
 
         const money = n => '₦' + Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
@@ -548,19 +550,8 @@
             }
         };
 
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'starbite_is_staff') {
-                window.updateRoleUI();
-                window.renderOrderGoodsList();
-                window.renderMarketProducts();
-            }
-        });
-
-        // ----------------------------------------------------
-        // ACCURATE CRATE & PACK STOCK CALCULATION ENGINE
-        // ----------------------------------------------------
         window.getProductLiveStats = (prod) => {
-            if(!prod) return { boughtUnits: 0, soldUnits: 0, productionUnits: 0, availableUnits: 0, availablePacks: 0, remainingPieces: 0, packMultiplier: 1, unitLabel: 'packs', isOutOfStock: true, shopProd: null };
+            if(!prod) return { boughtUnits: 0, soldUnits: 0, availableUnits: 0, availablePacks: 0, remainingPieces: 0, packMultiplier: 1, unitLabel: 'packs', isOutOfStock: true, shopProd: null };
             
             const pName = (prod.name || '').trim().toLowerCase();
             const cat = (prod.category || '').toLowerCase();
@@ -568,7 +559,6 @@
             const packMultiplier = Math.max(1, Number(prod.packQty) || (isEgg ? 30 : 12));
             const unitLabel = isEgg ? 'crates' : ((prod.unit && prod.unit.toLowerCase().includes('crate')) ? 'crates' : 'packs');
 
-            // 1. Total Bought
             let boughtUnits = 0;
             (marketDb.transactions || []).forEach(t => {
                 (t.items || []).forEach(it => {
@@ -578,7 +568,6 @@
                 });
             });
 
-            // 2. Total Sold in Shop
             let soldUnits = 0;
             shopSales.forEach(s => {
                 (s.items || []).forEach(si => {
@@ -588,21 +577,6 @@
                 });
             });
 
-            // 3. Total Consumed by Bakery / Kitchen Production
-            let productionUnits = 0;
-            shopProductions.forEach(pr => {
-                const ingredients = pr.ingredients || pr.items || [];
-                ingredients.forEach(ing => {
-                    const ingName = (ing.name || '').trim().toLowerCase();
-                    if (ingName === pName || (prod.id && ing.productId === prod.id)) {
-                        const cratesUsed = Number(ing.crates || ing.packs || 0);
-                        const piecesUsed = Number(ing.units || ing.pieces || ing.qty || 0);
-                        productionUnits += (cratesUsed * (Number(ing.packQty) || packMultiplier)) + piecesUsed;
-                    }
-                });
-            });
-
-            // 4. Live Available Stock
             const shopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === pName);
             let availableUnits = 0;
 
@@ -613,7 +587,7 @@
                 const freezerUnits = Math.floor(freezerPacks * freezerMultiplier);
                 availableUnits = Math.max(0, roomStock + freezerUnits);
             } else {
-                availableUnits = Math.max(0, boughtUnits - soldUnits - productionUnits);
+                availableUnits = Math.max(0, boughtUnits - soldUnits);
             }
 
             const availablePacks = Math.floor(availableUnits / packMultiplier);
@@ -623,7 +597,6 @@
             return { 
                 boughtUnits, 
                 soldUnits, 
-                productionUnits, 
                 availableUnits, 
                 availablePacks, 
                 remainingPieces, 
@@ -634,129 +607,6 @@
             };
         };
 
-        // ----------------------------------------------------
-        // TWO-WAY PRODUCTION BRIDGE API
-        // ----------------------------------------------------
-        window.checkStockAvailability = function(productIdentifier) {
-            const query = String(productIdentifier || '').trim().toLowerCase();
-            const prod = (marketDb.products || []).find(p => p.id === productIdentifier || p.name.trim().toLowerCase() === query);
-            
-            if (!prod) {
-                return { 
-                    exists: false, 
-                    availableUnits: 0, 
-                    availablePacks: 0, 
-                    isOutOfStock: true, 
-                    message: `Product "${productIdentifier}" is not registered in Market Catalog.` 
-                };
-            }
-
-            const stats = window.getProductLiveStats(prod);
-            const isOutOfStock = stats.availablePacks <= 0;
-
-            return {
-                exists: true,
-                product: prod,
-                availableUnits: stats.availableUnits,
-                availablePacks: stats.availablePacks,
-                remainingPieces: stats.remainingPieces,
-                packMultiplier: stats.packMultiplier,
-                unitLabel: stats.unitLabel,
-                isOutOfStock: isOutOfStock,
-                message: isOutOfStock 
-                    ? `⚠️ NO ${stats.unitLabel.toUpperCase()} OF ${prod.name.toUpperCase()} AVAILABLE (0 ${stats.unitLabel} in store!)`
-                    : `Available: ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} total units)`
-            };
-        };
-
-        window.deductProductionStock = async function(productIdentifier, cratesToDeduct, piecesToDeduct = 0, batchInfo = "Production Batch") {
-            const query = String(productIdentifier || '').trim().toLowerCase();
-            const prod = (marketDb.products || []).find(p => p.id === productIdentifier || p.name.trim().toLowerCase() === query);
-            
-            const isEgg = query.includes('egg') || (prod && (prod.category || '').toLowerCase().includes('egg'));
-            const packMultiplier = prod ? (Number(prod.packQty) || (isEgg ? 30 : 12)) : (isEgg ? 30 : 12);
-            const totalUnitsToDeduct = (Number(cratesToDeduct || 0) * packMultiplier) + Number(piecesToDeduct || 0);
-
-            const stats = prod ? window.getProductLiveStats(prod) : null;
-            const currentUnits = stats ? stats.availableUnits : 0;
-            const currentCrates = stats ? stats.availablePacks : 0;
-            const unitLabel = isEgg ? 'crates' : 'packs';
-
-            // Guard: Strict Block when Out of Stock
-            if (currentUnits < totalUnitsToDeduct || currentUnits <= 0) {
-                const errorMsg = `❌ STOP: Cannot use ${cratesToDeduct} ${unitLabel} of "${prod ? prod.name : productIdentifier}". Current available in store: ${currentCrates} ${unitLabel}. Store has NO AVAILABLE ${unitLabel.toUpperCase()}!`;
-                alert(errorMsg);
-                return { success: false, error: "OUT_OF_STOCK", availableUnits: currentUnits, availablePacks: currentCrates, message: errorMsg };
-            }
-
-            // Deduct from Firestore Product doc
-            const targetShopProd = shopProducts.find(sp => (prod && sp.id === prod.id) || sp.name.trim().toLowerCase() === query);
-            if (targetShopProd) {
-                try {
-                    await updateDoc(doc(db, "shops", currentBizId, "products", targetShopProd.id), {
-                        stock: increment(-totalUnitsToDeduct)
-                    });
-                } catch(e) { window.showDbError(e, "Deduct Production Stock"); }
-            }
-
-            // Record Production Audit Log
-            try {
-                await addDoc(collection(db, "shops", currentBizId, "productions"), {
-                    timestamp: new Date().toISOString(),
-                    batchInfo: batchInfo,
-                    ingredients: [{
-                        productId: prod ? prod.id : '',
-                        name: prod ? prod.name : productIdentifier,
-                        crates: Number(cratesToDeduct || 0),
-                        pieces: Number(piecesToDeduct || 0),
-                        packQty: packMultiplier,
-                        totalUnits: totalUnitsToDeduct
-                    }],
-                    updatedAt: Date.now()
-                });
-            } catch(e) { window.showDbError(e, "Log Production Usage"); }
-
-            // Broadcast to Mother App and other tabs
-            motherChannel.postMessage({
-                type: 'PRODUCTION_DEDUCTED',
-                productName: prod ? prod.name : productIdentifier,
-                cratesDeducted: cratesToDeduct,
-                unitsDeducted: totalUnitsToDeduct,
-                timestamp: Date.now()
-            });
-
-            window.renderAllMarketViews();
-
-            const remainingPacks = Math.max(0, currentCrates - cratesToDeduct);
-            return {
-                success: true,
-                remainingUnits: currentUnits - totalUnitsToDeduct,
-                remainingPacks: remainingPacks,
-                message: `Deducted ${cratesToDeduct} ${unitLabel}. Remaining in store: ${remainingPacks} ${unitLabel}.`
-            };
-        };
-
-        // Listen for requests from other tabs/iframes
-        motherChannel.onmessage = (event) => {
-            const data = event.data;
-            if (data && (data.type === 'PRODUCTION_DEDUCTED' || data.type === 'REFRESH_INVENTORY')) {
-                window.renderAllMarketViews();
-            }
-        };
-
-        window.addEventListener('message', async (e) => {
-            if (e.data && e.data.type === 'CHECK_STOCK_REQ') {
-                const res = window.checkStockAvailability(e.data.productName);
-                if (e.source) e.source.postMessage({ type: 'CHECK_STOCK_RES', ...res, reqId: e.data.reqId }, '*');
-            } else if (e.data && e.data.type === 'DEDUCT_PRODUCTION_REQ') {
-                const res = await window.deductProductionStock(e.data.productName, e.data.crates, e.data.pieces, e.data.batchInfo);
-                if (e.source) e.source.postMessage({ type: 'DEDUCT_PRODUCTION_RES', ...res, reqId: e.data.reqId }, '*');
-            }
-        });
-
-        // ----------------------------------------------------
-        // UI RENDERING & OUT OF STOCK NOTIFICATION BANNERS
-        // ----------------------------------------------------
         window.renderOutOfStockBanner = () => {
             const banner = document.getElementById('mkt-out-of-stock-banner');
             if (!banner) return;
@@ -777,95 +627,15 @@
             if (outOfStockItems.length > 0) {
                 banner.innerHTML = `
                     <div style="font-weight:bold; font-size:14px; margin-bottom:5px;">🚨 URGENT OUT-OF-STOCK ALERT:</div>
-                    <div>The following products have <b>0 available crates/packs</b>. Bakery Production cannot proceed until restocked:</div>
+                    <div>The following products have <b>0 available crates/packs</b>:</div>
                     <ul style="margin:6px 0 8px 18px; padding:0;">
                         ${outOfStockItems.map(it => `<li><b>${esc(it.name)}:</b> <span style="color:#b91c1c; font-weight:bold;">NO ${it.unitLabel.toUpperCase()} AVAILABLE (${it.availableUnits} pcs)</span></li>`).join('')}
                     </ul>
-                    <button class="btn-red btn-tbl" onclick="window.autoAddOutOfStockToNeeds()" style="font-size:12px; padding:6px 12px; margin-top:4px;">➕ Auto-Add Exhausted Items to Shopping List</button>
                 `;
                 banner.style.display = 'block';
             } else {
                 banner.style.display = 'none';
             }
-        };
-
-        window.autoAddOutOfStockToNeeds = () => {
-            let addedCount = 0;
-            (marketDb.products || []).forEach(p => {
-                const stats = window.getProductLiveStats(p);
-                if (stats.availablePacks <= 0) {
-                    const alreadyInNeeds = (marketDb.needs || []).some(n => n.productId === p.id && n.status === 'pending');
-                    if (!alreadyInNeeds) {
-                        marketDb.needs = marketDb.needs || [];
-                        marketDb.needs.push({
-                            id: 'need_' + Date.now() + Math.random().toString(36).slice(2,5),
-                            productId: p.id,
-                            supplierId: p.supplierId || (marketDb.suppliers[0]?.id || ''),
-                            qty: 5, // default restock batch of 5 crates
-                            status: 'pending',
-                            updatedAt: Date.now(),
-                            date: new Date().toISOString()
-                        });
-                        addedCount++;
-                    }
-                }
-            });
-
-            if (addedCount > 0) {
-                window.saveMarketState(true);
-                alert(`✅ Added ${addedCount} exhausted product(s) to Market Shopping List with 5 crates recommended!`);
-                showMktPage('mkt-needs');
-                window.renderNeeds();
-            } else {
-                alert("All exhausted items are already present in your Market Shopping List!");
-            }
-        };
-
-        window.renderOrderGoodsList = () => {
-            const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
-            const cat = document.getElementById('orderCategoryFilter')?.value;
-            const tbody = document.getElementById('orderGoodsTableBody');
-            if(!tbody) return;
-
-            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
-            
-            tbody.innerHTML = list.length ? list.map(p => {
-                const st = markedOrderState[p.id], chk = Boolean(st && st.checked), sup = chk ? supplier(st.supplierId) : null;
-                const stats = window.getProductLiveStats(p);
-
-                let availBadgeHtml = '';
-                if (stats.availablePacks <= 0) {
-                    availBadgeHtml = `<span class="badge stock-badge-red" style="font-size:11px; padding:4px 8px;">🚫 0 ${stats.unitLabel} (OUT OF STOCK)</span>`;
-                } else if (stats.availablePacks < 3) {
-                    availBadgeHtml = `<span class="badge stock-badge-orange" style="font-size:11px; padding:4px 8px;">⚠️ ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)</span>`;
-                } else {
-                    availBadgeHtml = `<span class="badge stock-badge-green" style="font-size:11px; padding:4px 8px;">✅ ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)</span>`;
-                }
-
-                return `<tr style="${chk ? 'background:#f4f3ff;' : (stats.availablePacks <= 0 ? 'background:#fff5f5;' : '')}">
-                    <td style="text-align:center"><input type="checkbox" ${chk?'checked':''} onchange="window.handleOrderCheckClick('${p.id}', this.checked)"></td>
-                    <td>
-                        <b>${esc(p.name)}</b>
-                        ${stats.availablePacks <= 0 ? '<br><small style="color:#b91c1c; font-weight:bold;">⚠️ RESTOCK URGENT</small>' : ''}
-                    </td>
-                    <td style="text-align:center"><span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${esc(p.unit||'Pack')} (${p.packQty||stats.packMultiplier} pcs)</span></td>
-                    <td style="text-align:center; font-weight:700;">${Math.floor(stats.boughtUnits / stats.packMultiplier)} ${stats.unitLabel} (${stats.boughtUnits} pcs)</td>
-                    <td style="text-align:center; font-weight:700; color:#0284c7;">${Math.floor((stats.soldUnits + stats.productionUnits) / stats.packMultiplier)} ${stats.unitLabel} (${stats.soldUnits + stats.productionUnits} pcs)</td>
-                    <td style="text-align:center;">${availBadgeHtml}</td>
-                    <td class="admin-only"><b>${money(p.cost)}</b></td>
-                    <td>${money(p.sell)}</td>
-                    <td>${chk ? `<span class="clickable" onclick="window.handleOrderCheckClick('${p.id}', true)">${esc(sup?.name||'Select Supplier')} ✏️</span>` : '<small style="color:#888;">Check to order</small>'}</td>
-                    <td style="text-align:center">${chk ? `<input type="number" min="1" value="${st.qty||1}" style="width:65px; margin:0; padding:4px;" oninput="window.changeOrderQty('${p.id}', this.value)">` : '—'}</td>
-                    <td style="text-align:center; white-space:nowrap;">
-                        <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
-                        <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">🗑️</button>
-                    </td>
-                </tr>`;
-            }).join('') : '<tr><td colspan="11" style="text-align:center; padding:15px; color:#999;">No products registered in catalog.</td></tr>';
-
-            window.updateLiveOrderBar();
-            window.renderCategoryDebtCaution();
-            window.renderOutOfStockBanner();
         };
 
         window.renderCategoryDebtCaution = () => {
@@ -925,6 +695,53 @@
             } else {
                 banner.style.display = 'none';
             }
+        };
+
+        window.renderOrderGoodsList = () => {
+            const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+            const cat = document.getElementById('orderCategoryFilter')?.value;
+            const tbody = document.getElementById('orderGoodsTableBody');
+            if(!tbody) return;
+
+            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
+            
+            tbody.innerHTML = list.length ? list.map(p => {
+                const st = markedOrderState[p.id], chk = Boolean(st && st.checked), sup = chk ? supplier(st.supplierId) : null;
+                const stats = window.getProductLiveStats(p);
+
+                let availBadgeHtml = '';
+                if (stats.availablePacks <= 0) {
+                    availBadgeHtml = `<span class="badge stock-badge-red" style="font-size:11px; padding:4px 8px;">🚫 0 ${stats.unitLabel} (OUT OF STOCK)</span>`;
+                } else if (stats.availablePacks < 3) {
+                    availBadgeHtml = `<span class="badge stock-badge-orange" style="font-size:11px; padding:4px 8px;">⚠️ ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)</span>`;
+                } else {
+                    availBadgeHtml = `<span class="badge stock-badge-green" style="font-size:11px; padding:4px 8px;">✅ ${stats.availablePacks} ${stats.unitLabel} (${stats.availableUnits} pcs)</span>`;
+                }
+
+                return `<tr style="${chk ? 'background:#f4f3ff;' : (stats.availablePacks <= 0 ? 'background:#fff5f5;' : '')}">
+                    <td style="text-align:center"><input type="checkbox" ${chk?'checked':''} onchange="window.handleOrderCheckClick('${p.id}', this.checked)"></td>
+                    <td>
+                        <b>${esc(p.name)}</b>
+                        ${stats.availablePacks <= 0 ? '<br><small style="color:#b91c1c; font-weight:bold;">⚠️ RESTOCK URGENT</small>' : ''}
+                    </td>
+                    <td style="text-align:center"><span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${esc(p.unit||'Pack')} (${p.packQty||stats.packMultiplier} pcs)</span></td>
+                    <td style="text-align:center; font-weight:700;">${Math.floor(stats.boughtUnits / stats.packMultiplier)} ${stats.unitLabel} (${stats.boughtUnits} pcs)</td>
+                    <td style="text-align:center; font-weight:700; color:#0284c7;">${Math.floor(stats.soldUnits / stats.packMultiplier)} ${stats.unitLabel} (${stats.soldUnits} pcs)</td>
+                    <td style="text-align:center;">${availBadgeHtml}</td>
+                    <td class="admin-only"><b>${money(p.cost)}</b></td>
+                    <td>${money(p.sell)}</td>
+                    <td>${chk ? `<span class="clickable" onclick="window.handleOrderCheckClick('${p.id}', true)">${esc(sup?.name||'Select Supplier')} ✏️</span>` : '<small style="color:#888;">Check to order</small>'}</td>
+                    <td style="text-align:center">${chk ? `<input type="number" min="1" value="${st.qty||1}" style="width:65px; margin:0; padding:4px;" oninput="window.changeOrderQty('${p.id}', this.value)">` : '—'}</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button class="btn-orange btn-mini admin-only" onclick="window.editMarketProduct('${p.id}')">✏️ Edit</button>
+                        <button class="btn-red btn-mini admin-only" onclick="window.deleteMarketProduct('${p.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="11" style="text-align:center; padding:15px; color:#999;">No products registered in catalog.</td></tr>';
+
+            window.updateLiveOrderBar();
+            window.renderOutOfStockBanner();
+            window.renderCategoryDebtCaution();
         };
 
         window.handleOrderCheckClick = (id, chk) => {
@@ -1010,20 +827,37 @@
             window.renderNeeds();
         };
 
+        // Transfer all marked goods, auto-select supplier and date
         window.convertMarkedToPurchase = () => {
             const ids = Object.keys(markedOrderState).filter(id => markedOrderState[id]?.checked);
             if(!ids.length) return alert("Please check at least one product.");
             
-            const firstSup = markedOrderState[ids[0]].supplierId;
+            let targetSup = markedOrderState[ids[0]]?.supplierId;
+            if(!targetSup && marketDb.suppliers && marketDb.suppliers.length > 0) {
+                targetSup = marketDb.suppliers[0].id;
+            }
+
             showMktPage('mkt-buy');
-            document.getElementById('tSupplier').value = firstSup;
-            window.handleTransactionSupplierChange();
+            window.populateSupplierSelects();
+
+            const supSelect = document.getElementById('tSupplier');
+            if(supSelect && targetSup) {
+                supSelect.value = targetSup;
+                window.handleTransactionSupplierChange();
+            }
+
+            const tDate = document.getElementById('tDate');
+            if(tDate && !tDate.value) {
+                tDate.value = new Date().toISOString().slice(0, 16);
+            }
+
             document.getElementById('transactionLines').innerHTML = '';
             
-            ids.filter(id => markedOrderState[id].supplierId === firstSup).forEach(id => {
-                window.addTransactionLine(id, markedOrderState[id].qty);
+            ids.forEach(id => {
+                window.addTransactionLine(id, markedOrderState[id]?.qty || 1);
                 delete markedOrderState[id];
             });
+
             window.calculateTransaction();
             window.renderOrderGoodsList();
         };
@@ -1102,10 +936,20 @@
             window.calculateTransaction();
         };
 
-        window.saveTransaction = async (e) => {
-            e.preventDefault();
-            const sId = document.getElementById('tSupplier').value;
-            if(!sId) return alert("Select registered supplier");
+        window.saveTransaction = async () => {
+            const btn = document.getElementById('btnSaveTx');
+            
+            const sId = document.getElementById('tSupplier')?.value;
+            if(!sId) {
+                alert("⚠️ Please select a Registered Supplier before saving.");
+                document.getElementById('tSupplier')?.focus();
+                return;
+            }
+
+            const tDateInput = document.getElementById('tDate');
+            if(!tDateInput.value) {
+                tDateInput.value = new Date().toISOString().slice(0, 16);
+            }
 
             const items = [];
             let total = 0, profit = 0;
@@ -1124,29 +968,48 @@
                 }
             });
 
-            if(!items.length) return alert("Add at least one product bought from supplier.");
+            if(!items.length) {
+                alert("⚠️ Please add at least one product to record this purchase.");
+                return;
+            }
 
-            const editingId = document.getElementById('editingTxId').value;
-            const paid = Number(document.getElementById('tPaid').value || 0);
+            btn.disabled = true;
+            btn.innerText = "💾 Saving & Syncing...";
 
-            if (editingId) {
-                const oldTx = (marketDb.transactions || []).find(x => x.id === editingId);
-                if (oldTx) {
-                    for(const oldIt of (oldTx.items || [])) {
-                        const oldPieces = (Number(oldIt.qty) || 1) * (Number(oldIt.packQty) || 1);
-                        const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === (oldIt.name || '').trim().toLowerCase());
-                        if (matchShop) {
-                            const curStock = Number(matchShop.stock) || 0;
-                            await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
-                                stock: Math.max(0, curStock - oldPieces)
-                            });
+            try {
+                const editingId = document.getElementById('editingTxId').value;
+                const paid = Number(document.getElementById('tPaid').value || 0);
+
+                if (editingId) {
+                    const oldTx = (marketDb.transactions || []).find(x => x.id === editingId);
+                    if (oldTx) {
+                        for(const oldIt of (oldTx.items || [])) {
+                            const oldPieces = (Number(oldIt.qty) || 1) * (Number(oldIt.packQty) || 1);
+                            const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === (oldIt.name || '').trim().toLowerCase());
+                            if (matchShop) {
+                                const curStock = Number(matchShop.stock) || 0;
+                                await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
+                                    stock: Math.max(0, curStock - oldPieces)
+                                });
+                            }
                         }
                     }
-                }
-                const txIdx = marketDb.transactions.findIndex(x => x.id === editingId);
-                if (txIdx !== -1) {
-                    marketDb.transactions[txIdx] = {
-                        ...marketDb.transactions[txIdx],
+                    const txIdx = marketDb.transactions.findIndex(x => x.id === editingId);
+                    if (txIdx !== -1) {
+                        marketDb.transactions[txIdx] = {
+                            ...marketDb.transactions[txIdx],
+                            date: document.getElementById('tDate').value || new Date().toISOString(),
+                            supplierId: sId,
+                            invoiceNo: document.getElementById('tInvoice').value.trim(),
+                            items, total, paid, balance: total - paid,
+                            status: document.getElementById('tStatus').value,
+                            method: document.getElementById('tMethod').value,
+                            profit, updatedAt: Date.now()
+                        };
+                    }
+                } else {
+                    const txData = {
+                        id: 'tx_' + Date.now(),
                         date: document.getElementById('tDate').value || new Date().toISOString(),
                         supplierId: sId,
                         invoiceNo: document.getElementById('tInvoice').value.trim(),
@@ -1155,55 +1018,50 @@
                         method: document.getElementById('tMethod').value,
                         profit, updatedAt: Date.now()
                     };
+                    marketDb.transactions = marketDb.transactions || [];
+                    marketDb.transactions.push(txData);
                 }
-            } else {
-                const txData = {
-                    id: 'tx_' + Date.now(),
-                    date: document.getElementById('tDate').value || new Date().toISOString(),
-                    supplierId: sId,
-                    invoiceNo: document.getElementById('tInvoice').value.trim(),
-                    items, total, paid, balance: total - paid,
-                    status: document.getElementById('tStatus').value,
-                    method: document.getElementById('tMethod').value,
-                    profit, updatedAt: Date.now()
-                };
-                marketDb.transactions = marketDb.transactions || [];
-                marketDb.transactions.push(txData);
+
+                await window.saveMarketState(true);
+
+                // Refill store stock in Firestore
+                for(const it of items) {
+                    const totalPieces = it.qty * (it.packQty || 1);
+                    const targetName = it.name.trim().toLowerCase();
+                    const existingShopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
+
+                    try {
+                        if(existingShopProd) {
+                            await updateDoc(doc(db, "shops", currentBizId, "products", existingShopProd.id), {
+                                stock: increment(totalPieces),
+                                initStock: increment(totalPieces),
+                                price: it.sell, cost: it.cost,
+                                category: it.category || existingShopProd.category || 'General'
+                            });
+                        } else {
+                            const docId = targetName.replace(/[^a-z0-9]/g, '_');
+                            await setDoc(doc(db, "shops", currentBizId, "products", docId), {
+                                name: it.name, category: it.category || 'General', price: it.sell, cost: it.cost,
+                                stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 30, barcode: '', expiryDate: ''
+                            }, { merge: true });
+                        }
+                    } catch(err) { window.showDbError(err, "Inventory Refill"); }
+                }
+
+                if(motherChannel) {
+                    motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
+                }
+
+                alert(`✅ Purchase Saved & Synced! Available crates & inventory refilled.`);
+                window.cancelEditingTransaction();
+                window.renderAllMarketViews();
+                showMktPage('mkt-history');
+            } catch(e) {
+                alert("Error saving purchase: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "💾 Save & Sync Across All Devices";
             }
-
-            await window.saveMarketState(true);
-
-            // Refill store stock in Firestore
-            for(const it of items) {
-                const totalPieces = it.qty * (it.packQty || 1);
-                const targetName = it.name.trim().toLowerCase();
-                const existingShopProd = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === targetName);
-
-                try {
-                    if(existingShopProd) {
-                        await updateDoc(doc(db, "shops", currentBizId, "products", existingShopProd.id), {
-                            stock: increment(totalPieces),
-                            initStock: increment(totalPieces),
-                            price: it.sell, cost: it.cost,
-                            category: it.category || existingShopProd.category || 'General'
-                        });
-                    } else {
-                        const docId = targetName.replace(/[^a-z0-9]/g, '_');
-                        await setDoc(doc(db, "shops", currentBizId, "products", docId), {
-                            name: it.name, category: it.category || 'General', price: it.sell, cost: it.cost,
-                            stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 30, barcode: '', expiryDate: ''
-                        }, { merge: true });
-                    }
-                } catch(err) { window.showDbError(err, "Inventory Refill"); }
-            }
-
-            // Broadcast to Mother App & Production tab
-            motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
-
-            alert(`✅ Purchase Saved & Synced! Available crates & inventory refilled.`);
-            window.cancelEditingTransaction();
-            window.renderAllMarketViews();
-            showMktPage('mkt-history');
         };
 
         window.cancelEditingTransaction = () => {
@@ -1264,7 +1122,7 @@
                 marketDb.deletedIds.push(txId);
 
                 await window.saveMarketState(true);
-                motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
+                if (motherChannel) motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
                 window.renderAllMarketViews();
                 alert("Purchase deleted and stock safely reduced.");
             } catch(e) { window.showDbError(e, "Delete Purchase"); }
@@ -1337,7 +1195,7 @@
 
             await window.saveMarketState(true);
             document.getElementById('mod-edit-goods-bought').style.display = 'none';
-            motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
+            if (motherChannel) motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
             window.renderAllMarketViews();
             alert(`✅ Item updated and store stock synced!`);
         };
@@ -1372,7 +1230,7 @@
                 }
 
                 await window.saveMarketState(true);
-                motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
+                if (motherChannel) motherChannel.postMessage({ type: 'REFRESH_INVENTORY', timestamp: Date.now() });
                 window.renderAllMarketViews();
             } catch(err) {
                 alert("Error deleting item: " + err.message);
@@ -1412,8 +1270,12 @@
             const n = (marketDb.needs || []).find(x => x.id === needId);
             if(!n) return;
             showMktPage('mkt-buy');
-            document.getElementById('tSupplier').value = n.supplierId;
-            window.handleTransactionSupplierChange();
+            window.populateSupplierSelects();
+            const supSelect = document.getElementById('tSupplier');
+            if(supSelect) {
+                supSelect.value = n.supplierId || (marketDb.suppliers[0]?.id || '');
+                window.handleTransactionSupplierChange();
+            }
             document.getElementById('transactionLines').innerHTML = '';
             window.addTransactionLine(n.productId, n.qty);
             n.status = 'fulfilled';
@@ -1623,7 +1485,7 @@
                         <div>
                             <b>${esc(p.name)}</b> <span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${p.unit||'Pack'} (${p.packQty} pcs)</span>
                             <div style="font-size:12px; color:#555; margin-top:3px;">
-                                <span class="admin-only">Wholesale: ${money(p.cost)} | </span>Retail: ${money(p.sell)} <span class="admin-only">| Est. Profit: <b class="text-green">+${money((p.sell*(p.packQty||1))-p.cost)}</b></span>
+                                <span class="admin-only">Wholesale: ${money(p.cost)} | </span>Retail: ${money(p.sell)}
                             </div>
                         </div>
                         <div style="text-align:right;">
@@ -1764,7 +1626,7 @@
                     <div style="padding:10px 12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <b>${idx + 1}. ${esc(name)}</b><br>
-                            <small style="color:#667085;">Total Purchased: ${val.packs} crates/pks</small>
+                            <small style="color:#667085;">Total Purchased: ${val.packs} packs</small>
                         </div>
                         <b class="text-green">+${money(val.profit)}</b>
                     </div>
@@ -1787,7 +1649,7 @@
                         new Date(t.date).toLocaleDateString(),
                         s?.name || 'Supplier',
                         it.name,
-                        `${it.qty} pks/crates (${it.qty * (it.packQty||1)} pcs)`,
+                        `${it.qty} pks (${it.qty * (it.packQty||1)} pcs)`,
                         money(it.lineTotal),
                         t.status === 'paid' ? 'Paid' : `Owed (${money(t.balance)})`
                     ]);
@@ -1804,7 +1666,7 @@
 
         window.renderOrderVoucherContent = () => {
             document.getElementById('voucherDate').innerText = new Date().toLocaleDateString();
-            document.getElementById('voucherBuyerName').innerText = marketDb.shop.name;
+            document.getElementById('voucherBuyerName').innerText = marketDb.shop.name || currentBizId;
             document.getElementById('voucherBuyerPhone').innerText = marketDb.shop.phone ? `Phone: ${marketDb.shop.phone}` : '';
             
             const filterSupId = document.getElementById('voucherSupplierFilter').value;
@@ -1888,6 +1750,50 @@
             } catch(err) { alert("Image rendering error: " + err.message); }
         };
 
+        window.promptAddCategory = () => {
+            const cat = prompt("Enter new category name:");
+            if (!cat || !cat.trim()) return;
+            marketDb.categories = marketDb.categories || [...DEFAULT_CATEGORIES];
+            if (!marketDb.categories.includes(cat.trim())) {
+                marketDb.categories.push(cat.trim());
+                window.saveMarketState(true);
+                window.populateSupplierSelects();
+            }
+        };
+
+        window.handleProductCategoryChange = (sel) => {
+            if (sel && sel.value === '__new__') {
+                const cat = prompt("Enter new category name:");
+                if (cat && cat.trim()) {
+                    marketDb.categories = marketDb.categories || [...DEFAULT_CATEGORIES];
+                    if (!marketDb.categories.includes(cat.trim())) {
+                        marketDb.categories.push(cat.trim());
+                        window.saveMarketState(true);
+                    }
+                    window.populateSupplierSelects();
+                    sel.value = cat.trim();
+                } else {
+                    sel.value = (marketDb.categories && marketDb.categories[0]) || 'General';
+                }
+            }
+        };
+
+        window.saveMarketState = async (syncCloud = true) => {
+            marketDb.updatedAt = Date.now();
+            localStorage.setItem('starbite_market_data_' + currentBizId, JSON.stringify(marketDb));
+
+            if (syncCloud && currentBizId) {
+                const badge = document.getElementById('cloudStatusBadge');
+                if (badge) { badge.className = 'top-badge badge-syncing'; badge.innerText = '☁️ Syncing...'; }
+                try {
+                    await setDoc(doc(db, "shops", currentBizId, "market", "main_store"), JSON.parse(JSON.stringify(marketDb)), { merge: true });
+                    if (badge) { badge.className = 'top-badge badge-live'; badge.innerText = '☁️ Live'; }
+                } catch(e) {
+                    window.showDbError(e, "Market Save");
+                }
+            }
+        };
+
         window.populateSupplierSelects = function() {
             const html = '<option value="">All Suppliers</option>' + (marketDb.suppliers || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
             ['tSupplier','needSupplierFilter','voucherSupplierFilter','mpSupplier','popMarkSupplierSelect','egb-supplier'].forEach(id => {
@@ -1918,44 +1824,16 @@
             window.renderReports();
         };
 
-        window.promptAddCategory = () => {
-            const cat = prompt("Enter new category name:");
-            if (!cat || !cat.trim()) return;
-            marketDb.categories = marketDb.categories || [...DEFAULT_CATEGORIES];
-            if (!marketDb.categories.includes(cat.trim())) {
-                marketDb.categories.push(cat.trim());
-                window.saveMarketState(true);
-                window.populateSupplierSelects();
-            }
-        };
-
-        window.handleProductCategoryChange = (sel) => {
-            if (sel && sel.value === '__new__') {
-                const cat = prompt("Enter new category name:");
-                if (cat && cat.trim()) {
-                    marketDb.categories = marketDb.categories || [...DEFAULT_CATEGORIES];
-                    if (!marketDb.categories.includes(cat.trim())) {
-                        marketDb.categories.push(cat.trim());
-                        window.saveMarketState(true);
-                    }
-                    window.populateSupplierSelects();
-                    sel.value = cat.trim();
-                } else {
-                    sel.value = (marketDb.categories && marketDb.categories[0]) || 'General';
-                }
-            }
-        };
-
-        // Real-Time Listeners
+        // Real-Time Listeners (Direct to Authorized Collections only)
         window.updateRoleUI();
 
         onSnapshot(doc(db, "shops", currentBizId), (snap) => {
             if (snap.exists()) {
-                currentShopMeta = snap.data();
+                const data = snap.data();
                 const topShop = document.getElementById('topShopName');
-                if (topShop) topShop.innerText = currentShopMeta.name || marketDb.shop.name || currentBizId;
+                if (topShop) topShop.innerText = data.name || marketDb.shop.name || currentBizId;
             }
-        }, err => window.showDbError(err, "ShopMeta"));
+        }, err => console.warn("ShopMeta listener notice:", err));
 
         onSnapshot(doc(db, "shops", currentBizId, "market", "main_store"), (docSnap) => {
             if (docSnap.exists()) {
@@ -1975,14 +1853,15 @@
             window.renderAllMarketViews();
         }, err => window.showDbError(err, "Sales Sync"));
 
-        // Live Listener to Bakery / Kitchen Production Records
-        onSnapshot(collection(db, "shops", currentBizId, "productions"), (snap) => {
-            shopProductions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderAllMarketViews();
-        }, err => window.showDbError(err, "Productions Sync"));
+        if(motherChannel) {
+            motherChannel.onmessage = (e) => {
+                if (e.data && (e.data.type === 'PRODUCTION_DEDUCTED' || e.data.type === 'REFRESH_INVENTORY')) {
+                    window.renderAllMarketViews();
+                }
+            };
+        }
 
         window.renderAllMarketViews();
     </script>
 </body>
 </html>
-
