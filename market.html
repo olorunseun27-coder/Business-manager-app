@@ -130,7 +130,7 @@
                     <p style="font-size:12px; color:#667085; margin-top:0;">Live Synced with Bakery Production Record: Available Crates &amp; Packs update in real-time.</p>
                     
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-                        <input id="orderSearch" placeholder="🔍 Search product or category..." oninput="window.renderOrderGoodsList()" style="flex:2; margin:0;">
+                        <input id="orderSearch" placeholder="🔍 Search product, barcode, or category..." oninput="window.renderOrderGoodsList()" style="flex:2; margin:0;">
                         <select id="orderCategoryFilter" onchange="window.renderOrderGoodsList()" style="flex:1; margin:0;"><option value="">All Categories</option></select>
                         <button class="btn-dark" onclick="window.resetOrderSelection()" style="width:auto; margin:0; padding:8px 12px; font-size:13px;">Reset</button>
                     </div>
@@ -176,7 +176,7 @@
                 <div class="card">
                     <h3 style="margin-top:0;">📋 Market Shopping List</h3>
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-                        <input id="needSearch" placeholder="🔍 Search item, supplier, category..." oninput="window.renderNeeds()" style="flex:2; margin:0;">
+                        <input id="needSearch" placeholder="🔍 Search item, barcode, supplier, category..." oninput="window.renderNeeds()" style="flex:2; margin:0;">
                         <select id="needSupplierFilter" onchange="window.renderNeeds()" style="flex:1; margin:0;"><option value="">All Suppliers</option></select>
                         <button class="btn-whatsapp" onclick="window.openOrderVoucherModal('needs')" style="width:auto; margin:0; padding:8px 12px; font-size:13px;">💬 WhatsApp Slip</button>
                     </div>
@@ -278,7 +278,7 @@
                             <button class="btn-blue btn-tbl" onclick="window.openProductModal()">➕ New Product</button>
                         </div>
                     </div>
-                    <input id="productSearch" placeholder="🔍 Search products..." oninput="window.renderMarketProducts()">
+                    <input id="productSearch" placeholder="🔍 Search products or scan barcode..." oninput="window.renderMarketProducts()">
                     <div id="supplierGroupedProductsContainer"></div>
                 </div>
             </div>
@@ -371,14 +371,27 @@
         </form>
     </div></div>
 
-    <!-- MODAL 4: PRODUCT REGISTRATION & EDIT -->
+    <!-- MODAL 4: PRODUCT REGISTRATION & EDIT (WITH BARCODE SUPPORT) -->
     <div class="modal" id="marketProductModal"><div class="modal-content">
         <h3 id="mktProdModalTitle">Register Product</h3>
         <form onsubmit="window.saveMarketProduct(event)">
             <input type="hidden" id="mktProductId">
-            <label>Product Name:</label><input id="mpName" placeholder="e.g. Eggs, Flour, Butter" required>
-            <label>Supplier:</label><select id="mpSupplier" required></select>
-            <label>Category:</label><select id="mpCategory" onchange="window.handleProductCategoryChange(this)" required></select>
+            
+            <label>Product Name:</label>
+            <input id="mpName" placeholder="e.g. Eggs, Flour, Butter" required>
+            
+            <label>Barcode / SKU:</label>
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+                <input id="mpBarcode" placeholder="Scan or enter barcode (e.g. 123456789012)" style="margin:0;">
+                <button type="button" class="btn-dark" style="width:auto; white-space:nowrap; margin:0; padding:0 12px; font-size:12px;" onclick="window.generateRandomBarcode()">🎲 Gen</button>
+            </div>
+
+            <label>Supplier:</label>
+            <select id="mpSupplier" required></select>
+
+            <label>Category:</label>
+            <select id="mpCategory" onchange="window.handleProductCategoryChange(this)" required></select>
+
             <label>Pack Type / Unit:</label>
             <select id="mpUnit">
                 <option value="Crate">Crate (e.g. Eggs - 30 pcs)</option>
@@ -387,13 +400,18 @@
                 <option value="Big">Big</option>
                 <option value="Small">Small</option>
             </select>
+
             <div class="admin-only">
-                <label>Wholesale Cost (₦):</label><input id="mpCost" type="number" min="0" step="0.01" value="0" required>
+                <label>Wholesale Cost (₦):</label>
+                <input id="mpCost" type="number" min="0" step="0.01" value="0" required>
             </div>
+
             <label>Items / Pieces in 1 Pack or Crate:</label>
             <input id="mpPackQty" type="number" min="1" value="30" placeholder="e.g. 30 for Eggs, 12 for drinks">
+
             <label>Retail Selling Price per Unit/Piece (₦):</label>
             <input id="mpSell" type="number" min="0" step="0.01" required>
+
             <button class="btn-green" type="submit">Save to Market &amp; Store</button>
             <button class="btn-red" type="button" onclick="closeModals()">Cancel</button>
         </form>
@@ -537,6 +555,12 @@
         const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
         const supplier = id => (marketDb.suppliers || []).find(x => x.id === id);
 
+        window.generateRandomBarcode = () => {
+            const code = '200' + Math.floor(100000000 + Math.random() * 900000000);
+            const input = document.getElementById('mpBarcode');
+            if (input) input.value = code;
+        };
+
         window.updateRoleUI = () => {
             isStaffRole = localStorage.getItem('starbite_is_staff') === 'true';
             if (isStaffRole) {
@@ -629,7 +653,7 @@
                     <div style="font-weight:bold; font-size:14px; margin-bottom:5px;">🚨 URGENT OUT-OF-STOCK ALERT:</div>
                     <div>The following products have <b>0 available crates/packs</b>:</div>
                     <ul style="margin:6px 0 8px 18px; padding:0;">
-                        ${outOfStockItems.map(it => `<li><b>${esc(it.name)}:</b> <span style="color:#b91c1c; font-weight:bold;">NO ${it.unitLabel.toUpperCase()} AVAILABLE (${it.availableUnits} pcs)</span></li>`).join('')}
+                        ${outOfStockItems.map(it => `<li><b>${esc(it.name)}</b>: <span style="color:#b91c1c; font-weight:bold;">NO ${it.unitLabel.toUpperCase()} AVAILABLE (${it.availableUnits} pcs)</span></li>`).join('')}
                     </ul>
                 `;
                 banner.style.display = 'block';
@@ -703,7 +727,7 @@
             const tbody = document.getElementById('orderGoodsTableBody');
             if(!tbody) return;
 
-            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
+            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '') + ' ' + (p.barcode || '')).toLowerCase().includes(q) && (!cat || p.category === cat));
             
             tbody.innerHTML = list.length ? list.map(p => {
                 const st = markedOrderState[p.id], chk = Boolean(st && st.checked), sup = chk ? supplier(st.supplierId) : null;
@@ -722,6 +746,7 @@
                     <td style="text-align:center"><input type="checkbox" ${chk?'checked':''} onchange="window.handleOrderCheckClick('${p.id}', this.checked)"></td>
                     <td>
                         <b>${esc(p.name)}</b>
+                        ${p.barcode ? `<br><small style="color:#64748b; font-family:monospace;">📟 ${esc(p.barcode)}</small>` : ''}
                         ${stats.availablePacks <= 0 ? '<br><small style="color:#b91c1c; font-weight:bold;">⚠️ RESTOCK URGENT</small>' : ''}
                     </td>
                     <td style="text-align:center"><span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${esc(p.unit||'Pack')} (${p.packQty||stats.packMultiplier} pcs)</span></td>
@@ -892,7 +917,7 @@
             wrap.appendChild(div);
             
             const sel = div.querySelector('.tx-product');
-            sel.innerHTML = '<option value="">-- Choose Product --</option>' + (marketDb.products || []).map(p => `<option value="${p.id}">${esc(p.name)} [${p.unit || 'Pack'}] ${!isStaffRole ? '- ' + money(p.cost) : ''}</option>`).join('');
+            sel.innerHTML = '<option value="">-- Choose Product --</option>' + (marketDb.products || []).map(p => `<option value="${p.id}">${esc(p.name)} [${p.unit || 'Pack'}] ${p.barcode ? '('+esc(p.barcode)+') ' : ''}${!isStaffRole ? '- ' + money(p.cost) : ''}</option>`).join('');
             if(selectedId) sel.value = selectedId;
             window.calculateTransaction();
         };
@@ -962,7 +987,7 @@
                     const pSell = Number(p.sell) || 0;
                     const pPackQty = Math.max(1, Number(p.packQty) || 1);
                     const line = pCost * q;
-                    items.push({ productId: p.id, name: p.name, unit: p.unit || 'Pack', category: p.category || 'General', qty: q, cost: pCost, packQty: pPackQty, sell: pSell, lineTotal: line });
+                    items.push({ productId: p.id, name: p.name, barcode: p.barcode || '', unit: p.unit || 'Pack', category: p.category || 'General', qty: q, cost: pCost, packQty: pPackQty, sell: pSell, lineTotal: line });
                     total += line;
                     profit += (((pSell * pPackQty) - pCost) * q);
                 }
@@ -1036,13 +1061,14 @@
                                 stock: increment(totalPieces),
                                 initStock: increment(totalPieces),
                                 price: it.sell, cost: it.cost,
-                                category: it.category || existingShopProd.category || 'General'
+                                category: it.category || existingShopProd.category || 'General',
+                                ...(it.barcode ? { barcode: it.barcode } : {})
                             });
                         } else {
                             const docId = targetName.replace(/[^a-z0-9]/g, '_');
                             await setDoc(doc(db, "shops", currentBizId, "products", docId), {
-                                name: it.name, category: it.category || 'General', price: it.sell, cost: it.cost,
-                                stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 30, barcode: '', expiryDate: ''
+                                name: it.name, barcode: it.barcode || '', category: it.category || 'General', price: it.sell, cost: it.cost,
+                                stock: totalPieces, initStock: totalPieces, itemsPerPack: it.packQty || 30, expiryDate: ''
                             }, { merge: true });
                         }
                     } catch(err) { window.showDbError(err, "Inventory Refill"); }
@@ -1244,7 +1270,7 @@
                 if (n.status !== 'pending') return false;
                 const p = (marketDb.products || []).find(x => x.id === n.productId);
                 const s = supplier(n.supplierId);
-                const matchQ = ((p?.name || '') + ' ' + (s?.name || '')).toLowerCase().includes(q);
+                const matchQ = ((p?.name || '') + ' ' + (p?.barcode || '') + ' ' + (s?.name || '')).toLowerCase().includes(q);
                 const matchSup = !supFilter || n.supplierId === supFilter;
                 return matchQ && matchSup;
             });
@@ -1258,6 +1284,7 @@
                 return `<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
                     <div>
                         <b>${esc(p?.name)}</b> <span class="badge ${p?.unit==='Crate'?'size-big':'size-small'}">${p?.unit||'Pack'}</span>
+                        ${p?.barcode ? `<small style="color:#64748b; font-family:monospace; margin-left:4px;">[${esc(p.barcode)}]</small>` : ''}
                         ${stats.availablePacks <= 0 ? '<span class="badge stock-badge-red" style="margin-left:4px;">0 in Store</span>' : ''}
                         <br><small style="color:#777;">Supplier: ${esc(s?.name || 'Any')} | Order Qty: <b>${n.qty} ${stats.unitLabel}</b></small>
                     </div>
@@ -1306,7 +1333,7 @@
                 const s = supplier(t.supplierId);
                 let itemsListHtml = (t.items || []).map((it, idx) => `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px dashed #eee; font-size:12px;">
-                        <span>• <b>${esc(it.name)}</b>: ${it.qty} pks/crates (${it.qty * (it.packQty||1)} pcs)</span>
+                        <span>• <b>${esc(it.name)}</b>: ${it.qty} pks/crates (${it.qty * (it.packQty||1)} pcs) ${it.barcode ? `<small style="color:#64748b; font-family:monospace;">[${esc(it.barcode)}]</small>` : ''}</span>
                         <div style="display:flex; gap:3px;">
                             <button class="btn-orange btn-mini admin-only" onclick="window.openEditGoodsBought('${t.id}', ${idx})">✏️ Edit</button>
                             <button class="btn-red btn-mini admin-only" onclick="window.deleteGoodsBoughtItem('${t.id}', ${idx})">🗑️</button>
@@ -1476,7 +1503,7 @@
             const cont = document.getElementById('supplierGroupedProductsContainer');
             if(!cont) return;
             const q = (document.getElementById('productSearch')?.value || '').toLowerCase();
-            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '')).toLowerCase().includes(q));
+            const list = (marketDb.products || []).filter(p => (p.name + ' ' + (p.category || '') + ' ' + (p.barcode || '')).toLowerCase().includes(q));
             
             cont.innerHTML = list.map(p => {
                 const stats = window.getProductLiveStats(p);
@@ -1484,6 +1511,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <b>${esc(p.name)}</b> <span class="badge ${p.unit==='Crate'?'size-big':'size-small'}">${p.unit||'Pack'} (${p.packQty} pcs)</span>
+                            ${p.barcode ? `<br><small style="color:#64748b; font-family:monospace; background:#f1f5f9; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:3px;">📟 Barcode: <b>${esc(p.barcode)}</b></small>` : ''}
                             <div style="font-size:12px; color:#555; margin-top:3px;">
                                 <span class="admin-only">Wholesale: ${money(p.cost)} | </span>Retail: ${money(p.sell)}
                             </div>
@@ -1506,6 +1534,7 @@
             document.getElementById('mktProdModalTitle').innerText = 'Register Product';
             document.getElementById('mktProductId').value = '';
             document.getElementById('mpName').value = '';
+            document.getElementById('mpBarcode').value = '';
             document.getElementById('mpCost').value = '';
             document.getElementById('mpPackQty').value = '30';
             document.getElementById('mpSell').value = '';
@@ -1521,6 +1550,7 @@
             document.getElementById('mktProdModalTitle').innerText = '✏️ Edit Product';
             document.getElementById('mktProductId').value = p.id;
             document.getElementById('mpName').value = p.name || '';
+            document.getElementById('mpBarcode').value = p.barcode || '';
             document.getElementById('mpSupplier').value = p.supplierId || '';
             document.getElementById('mpCategory').value = p.category || (marketDb.categories && marketDb.categories[0]) || '';
             document.getElementById('mpUnit').value = p.unit || 'Crate';
@@ -1534,6 +1564,7 @@
             e.preventDefault();
             const id = document.getElementById('mktProductId').value;
             const name = document.getElementById('mpName').value.trim();
+            const barcode = (document.getElementById('mpBarcode')?.value || '').trim();
             const supplierId = document.getElementById('mpSupplier').value;
             const category = document.getElementById('mpCategory').value;
             const unit = document.getElementById('mpUnit').value;
@@ -1548,22 +1579,22 @@
                 if (existingIdx !== -1) {
                     const oldProd = marketDb.products[existingIdx];
                     const oldNameLower = (oldProd.name || '').trim().toLowerCase();
-                    marketDb.products[existingIdx] = { ...marketDb.products[existingIdx], name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() };
+                    marketDb.products[existingIdx] = { ...marketDb.products[existingIdx], name, barcode, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() };
 
                     const matchShop = shopProducts.find(sp => sp.name && sp.name.trim().toLowerCase() === oldNameLower);
                     if (matchShop) {
                         try {
                             await updateDoc(doc(db, "shops", currentBizId, "products", matchShop.id), {
-                                name, category, price: sell, cost, itemsPerPack: packQty
+                                name, barcode, category, price: sell, cost, itemsPerPack: packQty
                             });
                         } catch(err) { window.showDbError(err, "Product Update Sync"); }
                     }
                 }
             } else {
-                marketDb.products.push({ id: 'prod_' + Date.now(), name, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() });
+                marketDb.products.push({ id: 'prod_' + Date.now(), name, barcode, supplierId, category, unit, cost, packQty, sell, updatedAt: Date.now() });
                 const docId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 await setDoc(doc(db, "shops", currentBizId, "products", docId), {
-                    name, category, price: sell, cost, stock: 0, initStock: 0, itemsPerPack: packQty, barcode: '', expiryDate: ''
+                    name, barcode, category, price: sell, cost, stock: 0, initStock: 0, itemsPerPack: packQty, expiryDate: ''
                 }, { merge: true });
             }
 
